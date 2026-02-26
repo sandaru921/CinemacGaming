@@ -1,0 +1,11 @@
+# .NET build folders
+bin/
+obj/
+
+# Node modules (Frontend එක සඳහා)
+node_modules/
+.next/
+
+# Environment secrets (API Keys වගේ දේවල් ආරක්ෂා කරන්න)
+.env
+appsettings.Development.json
