@@ -19,5 +19,8 @@ namespace Cinemac.Api.Models
         public double ImdbRating { get; set; }
         public double RottenTomatoesRating { get; set; } 
         public List<Showtime> Showtimes { get; set; } = new();
+        
+        // 5. Trailer
+        public string YoutubeTrailerKey { get; set; } = string.Empty;
     }
 }
