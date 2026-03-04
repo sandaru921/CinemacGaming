@@ -3,6 +3,10 @@ using Cinemac.Api.Data;
 using Cinemac.Api.Interfaces;
 using Cinemac.Api.Repositories;
 using Cinemac.Api.Services;
+using Cinemac.Api.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +39,31 @@ builder.Services.AddHttpClient();
 // 2. TMDBService එක Register කිරීම
 builder.Services.AddScoped<ITMDBService, TMDBService>();
 
+// Configure JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? "super_secret_fallback_key_that_must_be_long_1234567890";
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "CinemacApi",
+        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "CinemacClients",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+    };
+});
+
 var app = builder.Build();
+
+// Seed initial bookings data (Locations & 5 Rooms)
+Cinemac.Api.Data.DbSeeder.SeedLocationsAndRooms(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -50,6 +78,7 @@ app.UseHttpsRedirection();
 // Enable CORS for frontend
 app.UseCors(policy => policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod());
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
