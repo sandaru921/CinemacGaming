@@ -54,19 +54,14 @@ export default async function MovieDetailsPage({ params }: PageProps) {
               )}
             </div>
 
-            <div className="flex gap-4 max-w-md mx-auto lg:max-w-none w-full">
-                <button className="flex-1 bg-gradient-to-r from-cinemac-blue to-purple-600 text-white font-bold py-4 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                   <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-                 </svg>
-                 Play Movie
-               </button>
+            <div className="flex max-w-md mx-auto lg:max-w-none w-full">
                <AddToLibraryButton 
                  mediaId={movie.id.toString()}
                  mediaTitle={movie.title}
                  mediaType="Movie"
                  posterUrl={movie.posterUrl}
-                 className="!p-4 !rounded-xl"
+                 fullWidth={true}
+                 primary={true}
                />
             </div>
           </div>

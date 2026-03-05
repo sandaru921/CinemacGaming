@@ -291,18 +291,58 @@ export default function Navbar() {
           <div className="flex-1 px-8 py-4 space-y-8 overflow-y-auto">
              
              {/* Mobile Search */}
-             <form onSubmit={(e) => { handleSearchSubmit(e); setShowMobileMenu(false); }} className="relative">
-                <input 
-                  type="text" 
-                  placeholder={searchPlaceholder}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 text-white rounded-xl pl-10 pr-4 py-4 focus:outline-none focus:border-cinemac-purple text-lg"
-                />
-                <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-             </form>
+             <div className="relative">
+               <form onSubmit={(e) => { handleSearchSubmit(e); setShowMobileMenu(false); }} className="relative">
+                  <input 
+                    type="text" 
+                    placeholder={searchPlaceholder}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 text-white rounded-xl pl-10 pr-4 py-4 focus:outline-none focus:border-cinemac-purple text-lg"
+                  />
+                  <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+               </form>
+               
+               {/* Mobile Search Results */}
+               {searchQuery.trim() && (
+                <div className="mt-4 w-full bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                  {isSearching ? (
+                    <div className="p-4 text-sm text-gray-400 text-center animate-pulse">Searching...</div>
+                  ) : searchResults.length > 0 ? (
+                    <ul className="py-2">
+                      {searchResults.map((movie) => (
+                        <li key={movie.id} className="hover:bg-gray-800 transition-colors">
+                          <Link href={`/movie/${movie.id}`} className="px-4 py-3 flex items-center gap-3 w-full" onClick={() => setShowMobileMenu(false)}>
+                            <div className="relative w-10 h-14 bg-gray-800 rounded flex-shrink-0 overflow-hidden">
+                              {movie.posterUrl ? (
+                                 <Image src={movie.posterUrl} alt={movie.title} fill sizes="40px" className="object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[8px] text-gray-500">No Img</div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-white truncate">{movie.title}</p>
+                              {movie.imdbRating > 0 && (
+                                <p className="text-xs text-yellow-500 font-bold mt-0.5">★ {movie.imdbRating.toFixed(1)}</p>
+                              )}
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                      <li className="px-4 py-3 text-center border-t border-gray-800 mt-1">
+                         <button onClick={(e) => { handleSearchSubmit(e); setShowMobileMenu(false); }} className="text-sm p-2 w-full text-cinemac-blue hover:text-white font-bold">
+                           See all results
+                         </button>
+                      </li>
+                    </ul>
+                  ) : (
+                    <div className="p-4 text-sm text-gray-400 text-center">No results found.</div>
+                  )}
+                </div>
+               )}
+             </div>
 
              <nav className="flex flex-col gap-6 text-2xl font-bold">
                 <Link href="/" onClick={() => setShowMobileMenu(false)} className={pathname === "/" ? "text-cinemac-blue" : "text-white"}>Home</Link>

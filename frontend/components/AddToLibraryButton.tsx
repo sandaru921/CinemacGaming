@@ -9,6 +9,7 @@ interface AddToLibraryButtonProps {
   posterUrl: string;
   className?: string;
   fullWidth?: boolean;
+  primary?: boolean;
 }
 
 export default function AddToLibraryButton({ 
@@ -17,7 +18,8 @@ export default function AddToLibraryButton({
   mediaType, 
   posterUrl, 
   className = "",
-  fullWidth = false 
+  fullWidth = false,
+  primary = false
 }: AddToLibraryButtonProps) {
   const { addToLibrary, removeFromLibrary, isInLibrary } = useLibrary();
 
@@ -36,10 +38,12 @@ export default function AddToLibraryButton({
     <button 
       onClick={toggleLibrary}
       className={`relative z-20 flex items-center justify-center gap-2 font-bold transition-all shadow-lg
-        ${fullWidth ? 'w-full py-4 rounded-xl' : 'p-3 rounded-full'}
+        ${fullWidth ? 'w-full flex-1 py-4 rounded-xl text-sm lg:text-base hover:scale-105' : 'p-3 rounded-full'}
         ${isSaved 
           ? 'bg-green-500/10 text-green-500 border border-green-500/50 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50 group/btn' 
-          : 'bg-gray-800 text-white border border-gray-700 hover:bg-gray-700'
+          : primary 
+            ? 'bg-gradient-to-r from-cinemac-blue to-purple-600 text-white border border-transparent'
+            : 'bg-gray-800 text-white border border-gray-700 hover:bg-gray-700'
         } ${className}`}
       title={isSaved ? "Remove from Library" : "Add to play in Cinemac"}
     >
