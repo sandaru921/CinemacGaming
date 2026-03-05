@@ -5,7 +5,7 @@ import { Movie } from "../types/movie";
 import { movieService } from "../services/movieService";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,6 +15,7 @@ export default function Navbar() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const pathname = usePathname();
+  const router = useRouter();
 
   const [searchPlaceholder, setSearchPlaceholder] = useState("Search movies...");
   
@@ -99,7 +100,8 @@ export default function Navbar() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setShowDropdown(false);
-      alert(`Full search page for "${searchQuery}" coming soon!`);
+      setShowMobileMenu(false);
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
