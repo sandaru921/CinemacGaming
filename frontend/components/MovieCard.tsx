@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Movie } from "../types/movie";
 import AddToLibraryButton from "./AddToLibraryButton";
 import { useState, useEffect } from "react";
@@ -12,6 +13,7 @@ interface MovieCardProps {
 
 export default function MovieCard({ movie }: MovieCardProps) {
   const [isTouched, setIsTouched] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleOutsideTouch = () => setIsTouched(false);
@@ -19,21 +21,24 @@ export default function MovieCard({ movie }: MovieCardProps) {
     return () => document.removeEventListener("touchstart", handleOutsideTouch);
   }, []);
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) {
+      if (!isTouched) {
+        e.preventDefault();
+        setIsTouched(true);
+      } else {
+        // Force navigation on second tap to ensure mobile browsers don't swallow the event
+        e.preventDefault();
+        router.push(`/movie/${movie.id}`);
+      }
+    }
+  };
+
   return (
-    <div 
-      className="group relative w-full aspect-[2/3] cursor-pointer perspective-1000"
-      onTouchStart={(e) => e.stopPropagation()}
-    >
+    <div className="group relative w-full aspect-[2/3] cursor-pointer perspective-1000">
       <Link 
         href={`/movie/${movie.id}`}
-        onClick={(e) => {
-          if (typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) {
-            if (!isTouched) {
-              e.preventDefault();
-              setIsTouched(true);
-            }
-          }
-        }}
+        onClick={handleClick}
       >
         <div className={`absolute inset-0 z-10 origin-center transition-all duration-300 ease-out rounded-xl overflow-hidden bg-gray-900 border-2 ${
           isTouched 
