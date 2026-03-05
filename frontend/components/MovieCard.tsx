@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Movie } from "../types/movie";
 import AddToLibraryButton from "./AddToLibraryButton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface MovieCardProps {
   movie: Movie;
@@ -14,15 +14,23 @@ interface MovieCardProps {
 export default function MovieCard({ movie }: MovieCardProps) {
   const [isTouched, setIsTouched] = useState(false);
   const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const isTouchMode = useRef(false);
+  const lastTouchTime = useRef(0);
 
   useEffect(() => {
-    const handleOutsideTouch = () => setIsTouched(false);
+    const handleOutsideTouch = (e: TouchEvent) => {
+      // Check if touch is outside the current card
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setIsTouched(false);
+      }
+    };
     document.addEventListener("touchstart", handleOutsideTouch);
     return () => document.removeEventListener("touchstart", handleOutsideTouch);
   }, []);
 
   const handleClick = (e: React.MouseEvent) => {
-    if (typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) {
+    if (isTouchMode.current) {
       if (!isTouched) {
         e.preventDefault();
         setIsTouched(true);
@@ -35,7 +43,20 @@ export default function MovieCard({ movie }: MovieCardProps) {
   };
 
   return (
-    <div className="group relative w-full aspect-[2/3] cursor-pointer perspective-1000">
+    <div 
+      ref={cardRef}
+      className="group relative w-full aspect-[2/3] cursor-pointer perspective-1000"
+      onTouchStart={() => {
+        isTouchMode.current = true;
+        lastTouchTime.current = Date.now();
+      }}
+      onMouseEnter={() => {
+        // Only switch back to mouse mode if it's a real mouse enter (not triggered by touch sequence)
+        if (Date.now() - lastTouchTime.current > 500) {
+          isTouchMode.current = false;
+        }
+      }}
+    >
       <Link 
         href={`/movie/${movie.id}`}
         onClick={handleClick}
