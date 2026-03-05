@@ -1,6 +1,6 @@
 import { Movie } from "../types/movie";
 
-const API_BASE_URL = "http://localhost:5211/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
 
 export const movieService = {
   /**
