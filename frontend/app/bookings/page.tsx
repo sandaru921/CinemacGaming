@@ -5,10 +5,14 @@ import Navbar from "../../components/Navbar";
 import LocationSelector, { Location, Room } from "../../components/booking/LocationSelector";
 import RoomSelector from "../../components/booking/RoomSelector";
 import TimeSlotPicker from "../../components/booking/TimeSlotPicker";
-import { useRouter } from "next/navigation";
+import MediaSelector from "../../components/booking/MediaSelector";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useLibrary, LibraryItem } from "../../contexts/LibraryContext";
 
 export default function BookingsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { library } = useLibrary();
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -22,6 +26,21 @@ export default function BookingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Media Selection State
+  const [selectedMedia, setSelectedMedia] = useState<LibraryItem | null>(null);
+
+  // Auto-select media if coming from My Library (?media=xxx&type=yyy)
+  useEffect(() => {
+    const mediaId = searchParams?.get("media");
+    const mediaType = searchParams?.get("type");
+    if (mediaId && mediaType && library.length > 0 && !selectedMedia) {
+      const match = library.find(i => i.mediaId === mediaId && i.mediaType === mediaType);
+      if (match) {
+        setSelectedMedia(match);
+      }
+    }
+  }, [searchParams, library]);
 
   // 1. Fetch Locations & Rooms on Mount
   useEffect(() => {
@@ -91,7 +110,9 @@ export default function BookingsPage() {
           roomId: selectedRoom.id,
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
-          durationHours
+          durationHours,
+          mediaId: selectedMedia?.mediaId || null,
+          mediaType: selectedMedia?.mediaType || null
         };
         sessionStorage.setItem("cinemac_pending_booking", JSON.stringify(pendingBooking));
         sessionStorage.setItem("cinemac_redirect", "/bookings");
@@ -119,7 +140,9 @@ export default function BookingsPage() {
       customerName: username,
       customerEmail: `${username.toLowerCase().replace(" ", "")}@cinemac.com`,
       startTime: startTime.toISOString(),
-      endTime: endTime.toISOString()
+      endTime: endTime.toISOString(),
+      playedMediaTitle: selectedMedia?.mediaTitle || "",
+      playedMediaType: selectedMedia?.mediaType || ""
     };
 
     try {
@@ -213,7 +236,15 @@ export default function BookingsPage() {
               />
             )}
 
-            {/* Step 4: Checkout / Details */}
+            {/* Step 4: Media Selection (Optional) */}
+            {selectedRoom && startTime && (
+              <MediaSelector 
+                selectedMedia={selectedMedia} 
+                onSelect={(m) => setSelectedMedia(m.mediaId === selectedMedia?.mediaId ? null : m)} 
+              />
+            )}
+
+            {/* Step 5: Checkout / Details */}
             {selectedRoom && startTime && (
               <div className="bg-gradient-to-br from-gray-900 to-black border border-purple-500/30 rounded-3xl p-8 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
                  <h3 className="text-2xl font-bold mb-6">Final Details</h3>
@@ -239,6 +270,13 @@ export default function BookingsPage() {
                           </span>
                         </div>
                         <div className="flex justify-between text-sm mb-4"><span className="text-gray-400">Duration</span> <span className="font-bold">{durationHours} Hours</span></div>
+                        
+                        {selectedMedia && (
+                          <div className="flex justify-between text-sm mb-2 border-t border-gray-800 pt-2">
+                            <span className="text-gray-400">Selected Media</span> 
+                            <span className="font-bold text-purple-400 truncate max-w-[50%] text-right">{selectedMedia.mediaTitle}</span>
+                          </div>
+                        )}
                      </div>
                      
                      <div className="border-t border-gray-800 pt-4 flex justify-between items-end">

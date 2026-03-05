@@ -53,6 +53,8 @@ namespace Cinemac.Api.Controllers
             public string CustomerEmail { get; set; } = string.Empty;
             public DateTime StartTime { get; set; }
             public DateTime EndTime { get; set; }
+            public string PlayedMediaTitle { get; set; } = string.Empty;
+            public string PlayedMediaType { get; set; } = string.Empty;
         }
 
         // POST: api/bookings
@@ -98,7 +100,9 @@ namespace Cinemac.Api.Controllers
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
                 TotalPrice = totalPrice,
-                Status = BookingStatus.Confirmed
+                Status = BookingStatus.Confirmed,
+                PlayedMediaTitle = request.PlayedMediaTitle,
+                PlayedMediaType = request.PlayedMediaType
             };
 
             _context.RoomBookings.Add(booking);

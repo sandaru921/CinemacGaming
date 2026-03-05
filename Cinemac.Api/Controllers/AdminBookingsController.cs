@@ -40,7 +40,9 @@ namespace Cinemac.Api.Controllers
                     b.StartTime,
                     b.EndTime,
                     b.TotalPrice,
-                    b.Status
+                    b.Status,
+                    b.PlayedMediaTitle,
+                    b.PlayedMediaType
                 })
                 .ToListAsync();
 

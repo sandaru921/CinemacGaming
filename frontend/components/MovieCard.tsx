@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Movie } from "../types/movie";
+import AddToLibraryButton from "./AddToLibraryButton";
 
 interface MovieCardProps {
   movie: Movie;
@@ -64,11 +65,13 @@ export default function MovieCard({ movie }: MovieCardProps) {
                       </svg>
                       Play
                     </button>
-                    <button className="p-1.5 bg-gray-600/50 hover:bg-white/20 text-white rounded-md transition-colors border border-gray-400/30 backdrop-blur-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                    </button>
+                    <AddToLibraryButton 
+                      mediaId={movie.id.toString()}
+                      mediaTitle={movie.title}
+                      mediaType="Movie"
+                      posterUrl={movie.posterUrl}
+                      className="!p-1.5 !rounded-md"
+                    />
                   </div>
                </div>
             </div>

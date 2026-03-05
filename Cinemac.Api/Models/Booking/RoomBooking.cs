@@ -20,6 +20,10 @@ namespace Cinemac.Api.Models.Booking
         public decimal TotalPrice { get; set; }
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
+        // Elected Media from Library
+        public string PlayedMediaTitle { get; set; } = string.Empty;
+        public string PlayedMediaType { get; set; } = string.Empty; // "Movie" or "Game"
+
         // Navigation Property
         [JsonIgnore]
         public Room? Room { get; set; }

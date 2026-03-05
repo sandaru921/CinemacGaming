@@ -3,6 +3,7 @@ using System;
 using Cinemac.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cinemac.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260305033915_AddGameModel")]
+    partial class AddGameModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -95,14 +98,6 @@ namespace Cinemac.Api.Migrations
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PlayedMediaTitle")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PlayedMediaType")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
@@ -264,41 +259,6 @@ namespace Cinemac.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Cinemac.Api.Models.UserLibraryItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AddedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("MediaId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("MediaTitle")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("MediaType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PosterUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UserLibraryItems");
                 });
 
             modelBuilder.Entity("Cinemac.Api.Models.Booking.Room", b =>

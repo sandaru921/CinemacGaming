@@ -80,6 +80,7 @@ export default function AdminBookings() {
                  <tr>
                     <th className="px-6 py-4">Customer</th>
                     <th className="px-6 py-4">Location & Room</th>
+                    <th className="px-6 py-4">Media</th>
                     <th className="px-6 py-4">Slot Time</th>
                     <th className="px-6 py-4">Revenue</th>
                     <th className="px-6 py-4 text-center">Status</th>
@@ -107,6 +108,18 @@ export default function AdminBookings() {
                        <td className="px-6 py-4">
                          <div className="font-semibold">{b.roomName}</div>
                          <div className="text-xs text-cinemac-blue">{b.locationName}</div>
+                       </td>
+                       <td className="px-6 py-4">
+                         {b.playedMediaTitle ? (
+                           <>
+                             <div className="font-bold text-white truncate max-w-[150px]">{b.playedMediaTitle}</div>
+                             <div className="text-[10px] text-purple-400 font-bold uppercase border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded-full inline-block mt-1">
+                               {b.playedMediaType}
+                             </div>
+                           </>
+                         ) : (
+                           <span className="text-gray-600 italic">None</span>
+                         )}
                        </td>
                        <td className="px-6 py-4">
                          <div className="text-white whitespace-nowrap">{start.toLocaleDateString()}</div>

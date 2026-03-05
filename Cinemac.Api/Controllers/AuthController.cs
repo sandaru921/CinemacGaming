@@ -65,6 +65,7 @@ namespace Cinemac.Api.Controllers
         {
             string role = "User";
             string username = string.Empty;
+            string userIdStr = string.Empty;
 
             // 1. Check if it is an Admin
             var adminUser = await _context.AdminUsers.FirstOrDefaultAsync(u => u.Username == request.Username);
@@ -72,6 +73,7 @@ namespace Cinemac.Api.Controllers
             {
                 role = "Admin";
                 username = adminUser.Username;
+                userIdStr = adminUser.Id.ToString();
             }
             else
             {
@@ -81,6 +83,7 @@ namespace Cinemac.Api.Controllers
                 {
                     role = regularUser.Role;
                     username = regularUser.Username;
+                    userIdStr = regularUser.Id.ToString();
                 }
                 else
                 {
@@ -94,6 +97,7 @@ namespace Cinemac.Api.Controllers
 
             var authClaims = new[]
             {
+                new Claim(ClaimTypes.NameIdentifier, userIdStr),
                 new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, role),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),

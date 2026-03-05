@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
+import { useLibrary } from "../../contexts/LibraryContext";
 
 export default function Login() {
+  const { syncGuestLibrary } = useLibrary();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,6 +35,9 @@ export default function Login() {
         localStorage.setItem("cinemac_role", data.role);
         localStorage.setItem("cinemac_username", data.username);
         
+        // Sync any offline library items
+        await syncGuestLibrary();
+
         // Check for redirect hint
         const redirectUrl = sessionStorage.getItem("cinemac_redirect");
         if (redirectUrl) {

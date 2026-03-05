@@ -22,5 +22,11 @@ namespace Cinemac.Api.Data
 
         // Public Users Table
         public DbSet<User> Users { get; set; }
+        
+        // Games Table
+        public DbSet<Game> Games { get; set; }
+
+        // User Library
+        public DbSet<UserLibraryItem> UserLibraryItems { get; set; }
     }
 }
