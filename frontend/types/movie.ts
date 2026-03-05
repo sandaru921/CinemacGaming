@@ -9,4 +9,5 @@ export interface Movie {
   imdbRating: number;
   rottenTomatoesRating: number;
   youtubeTrailerKey?: string;
+  releaseYear?: string;
 }
