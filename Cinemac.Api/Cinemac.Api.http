@@ -1,4 +1,4 @@
-@Cinemac.Api_HostAddress = http://localhost:5211
+@Cinemac.Api_HostAddress = const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
 
 GET {{Cinemac.Api_HostAddress}}/weatherforecast/
 Accept: application/json

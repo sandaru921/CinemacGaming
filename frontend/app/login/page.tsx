@@ -6,6 +6,8 @@ import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import { useLibrary } from "../../contexts/LibraryContext";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 export default function Login() {
   const { syncGuestLibrary } = useLibrary();
   const [username, setUsername] = useState("");
@@ -21,7 +23,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5211/api/auth/login", {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })

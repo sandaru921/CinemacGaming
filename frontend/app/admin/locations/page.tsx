@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 export default function AdminLocations() {
   const [locations, setLocations] = useState<any[]>([]);
   const [newLocName, setNewLocName] = useState("");
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch("http://localhost:5211/api/admin/AdminLocations", {
+      const res = await fetch(`${API_BASE_URL}/admin/AdminLocations`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
       });
       if (res.ok) setLocations(await res.json());
@@ -21,7 +23,7 @@ export default function AdminLocations() {
     e.preventDefault();
     if (!newLocName) return;
 
-    await fetch("http://localhost:5211/api/admin/AdminLocations", {
+    await fetch(`${API_BASE_URL}/admin/AdminLocations`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -36,7 +38,7 @@ export default function AdminLocations() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure? This deletes all associated rooms and bookings.")) return;
 
-    await fetch(`http://localhost:5211/api/admin/AdminLocations/${id}`, {
+    await fetch(`${API_BASE_URL}/admin/AdminLocations/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
     });

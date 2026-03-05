@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 export default function AdminBookings() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,7 @@ export default function AdminBookings() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5211/api/admin/AdminBookings", {
+      const res = await fetch(`${API_BASE_URL}/admin/AdminBookings`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
       });
       if (res.ok) {
@@ -37,7 +39,7 @@ export default function AdminBookings() {
     }
 
     try {
-      await fetch(`http://localhost:5211/api/admin/AdminBookings/${id}/status`, {
+      await fetch(`${API_BASE_URL}/admin/AdminBookings/${id}/status`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -54,7 +56,7 @@ export default function AdminBookings() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to permanently delete this transaction record?")) return;
 
-    await fetch(`http://localhost:5211/api/admin/AdminBookings/${id}`, {
+    await fetch(`${API_BASE_URL}/admin/AdminBookings/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
     });

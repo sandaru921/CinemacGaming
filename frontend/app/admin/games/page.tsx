@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 type Game = {
   id: number;
   title: string;
@@ -43,7 +45,7 @@ export default function AdminGamesPage() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch("http://localhost:5211/api/admin/AdminGames", {
+      const res = await fetch(`${API_BASE_URL}/admin/AdminGames`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -121,13 +123,13 @@ export default function AdminGamesPage() {
 
       let res;
       if (isEditMode) {
-        res = await fetch(`http://localhost:5211/api/admin/AdminGames/${currentId}`, {
+        res = await fetch(`${API_BASE_URL}/admin/AdminGames/${currentId}`, {
           method: "PUT",
           headers,
           body: JSON.stringify(payload)
         });
       } else {
-        res = await fetch("http://localhost:5211/api/admin/AdminGames", {
+        res = await fetch(`${API_BASE_URL}/admin/AdminGames`, {
           method: "POST",
           headers,
           body: JSON.stringify(payload)
@@ -149,7 +151,7 @@ export default function AdminGamesPage() {
     if (!confirm("Are you sure you want to delete this game?")) return;
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`http://localhost:5211/api/admin/AdminGames/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/admin/AdminGames/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

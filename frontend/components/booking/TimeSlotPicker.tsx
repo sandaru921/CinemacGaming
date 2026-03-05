@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 interface TimeSlotPickerProps {
   roomId: string;
   onSlotSelected: (start: Date, end: Date, totalHours: number) => void;
@@ -29,7 +31,7 @@ export default function TimeSlotPicker({ roomId, onSlotSelected }: TimeSlotPicke
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://localhost:5211/api/bookings/availability?roomId=${roomId}&date=${selectedDate}`);
+        const response = await fetch(`${API_BASE_URL}/bookings/availability?roomId=${roomId}&date=${selectedDate}`);
         if (!response.ok) throw new Error("Failed to fetch availability");
         
         const data = await response.json();

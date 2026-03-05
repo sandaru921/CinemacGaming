@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import ExpandableDescription from "./ExpandableDescription";
 import AddToLibraryButton from "../../../components/AddToLibraryButton";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 interface PageProps {
   params: {
     id: string;
@@ -16,7 +18,7 @@ export default async function GameDetailsPage({ params }: PageProps) {
   let game = null;
 
   try {
-    const res = await fetch(`http://localhost:5211/api/Games/${id}`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL}/Games/${id}`, { cache: "no-store" });
     if (res.ok) {
       game = await res.json();
     }

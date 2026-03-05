@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 export interface LibraryItem {
   id?: number; // Only present if saved in DB
   mediaId: string;
@@ -29,7 +31,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:5211/api/Library", {
+      const res = await fetch(`${API_BASE_URL}/Library`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -90,7 +92,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
     if (token) {
       try {
-        await fetch("http://localhost:5211/api/Library", {
+        await fetch(`${API_BASE_URL}/Library`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -124,7 +126,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
     if (token && item?.id) {
       try {
-        await fetch(`http://localhost:5211/api/Library/${item.id}`, {
+        await fetch(`${API_BASE_URL}/Library/${item.id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -155,7 +157,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     try {
       const items: LibraryItem[] = JSON.parse(local);
       if (items.length > 0) {
-        const res = await fetch("http://localhost:5211/api/Library/bulk", {
+        const res = await fetch(`${API_BASE_URL}/Library/bulk`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",

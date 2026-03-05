@@ -9,6 +9,8 @@ import MediaSelector from "../../components/booking/MediaSelector";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLibrary, LibraryItem } from "../../contexts/LibraryContext";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 function BookingForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,7 +48,7 @@ function BookingForm() {
   useEffect(() => {
     async function fetchLocations() {
       try {
-        const res = await fetch("http://localhost:5211/api/bookings/locations");
+        const res = await fetch(`${API_BASE_URL}/bookings/locations`);
         if (res.ok) {
           const data = await res.json();
           setLocations(data);
@@ -143,7 +145,7 @@ function BookingForm() {
     };
 
     try {
-      const res = await fetch("http://localhost:5211/api/bookings", {
+      const res = await fetch(`${API_BASE_URL}/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

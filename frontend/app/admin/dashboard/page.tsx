@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 type AnalyticsData = {
   totalRevenue: number;
   totalBookings: number;
@@ -24,7 +26,7 @@ export default function AdminDashboard() {
     const fetchLocations = async () => {
       try {
         const token = localStorage.getItem("adminToken");
-        const res = await fetch("http://localhost:5211/api/admin/AdminLocations", {
+        const res = await fetch(`${API_BASE_URL}/admin/AdminLocations`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -50,7 +52,7 @@ export default function AdminDashboard() {
         if (filterStartDate) queryParams.append("startDate", filterStartDate);
         if (filterEndDate) queryParams.append("endDate", filterEndDate);
 
-        const res = await fetch(`http://localhost:5211/api/admin/AdminAnalytics?${queryParams.toString()}`, { headers });
+        const res = await fetch(`${API_BASE_URL}/admin/AdminAnalytics?${queryParams.toString()}`, { headers });
 
         if (!res.ok) throw new Error("Failed to load dashboard data");
 

@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import AddToLibraryButton from "../../components/AddToLibraryButton";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+
 type Game = {
   id: number;
   title: string;
@@ -18,7 +20,7 @@ export default async function GamesPage() {
   let games: Game[] = [];
 
   try {
-    const res = await fetch("http://localhost:5211/api/Games", { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL}/Games`, { cache: "no-store" });
     if (res.ok) {
       games = await res.json();
     }
