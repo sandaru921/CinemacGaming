@@ -71,7 +71,7 @@ export default function AdminSidebar() {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowMobileSidebar(true)}
-            className="p-2 -ml-2 text-white"
+            className="p-3 -ml-2 text-white hover:bg-white/10 rounded-xl transition"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -91,7 +91,10 @@ export default function AdminSidebar() {
           <aside className="w-64 bg-gray-900 h-full border-r border-gray-800 flex flex-col animate-in slide-in-from-left duration-300">
             <div className="h-16 flex items-center justify-between px-4 border-b border-gray-800">
               <span className="font-black text-lg">Menu</span>
-              <button onClick={() => setShowMobileSidebar(false)} className="p-2 text-gray-400 hover:text-white">
+              <button 
+                onClick={() => setShowMobileSidebar(false)} 
+                className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>

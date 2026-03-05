@@ -58,19 +58,14 @@ export default function MovieCard({ movie }: MovieCardProps) {
                   )}
                   
                   {/* Action Buttons */}
-                  <div className="mt-3 flex gap-2 relative z-20" onClick={(e) => { e.preventDefault(); }}>
-                    <button className="flex-1 bg-white text-black py-1.5 rounded-md text-xs font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                        <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-                      </svg>
-                      Play
-                    </button>
+                  <div className="mt-3 flex relative z-20" onClick={(e) => { e.preventDefault(); }}>
                     <AddToLibraryButton 
                       mediaId={movie.id.toString()}
                       mediaTitle={movie.title}
                       mediaType="Movie"
                       posterUrl={movie.posterUrl}
-                      className="!p-1.5 !rounded-md"
+                      fullWidth={true}
+                      className="!py-2 lg:!py-1.5 !rounded-md !text-sm lg:!text-xs h-auto"
                     />
                   </div>
                </div>

@@ -40,22 +40,22 @@ export default function MyLibrary() {
                   )}
                   
                   {/* Hover Content */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-4">
-                     <div className="translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 delay-75">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent/20 opacity-100 lg:opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-4">
+                     <div className="translate-y-0 lg:translate-y-4 opacity-100 lg:opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 delay-75">
                         <h4 className="text-sm font-bold text-white line-clamp-2 leading-tight drop-shadow-md">
                           {item.mediaTitle}
                         </h4>
                         
                         <div className="mt-3 flex gap-2 relative z-20" onClick={(e) => { e.preventDefault(); }}>
                           <button 
-                            className="flex-1 bg-white text-black py-1.5 rounded-md text-xs font-bold hover:bg-gray-200 transition-colors"
+                            className="flex-1 bg-white text-black py-2.5 lg:py-1.5 rounded-md text-sm lg:text-xs font-bold hover:bg-gray-200 transition-colors"
                             onClick={() => router.push(`/bookings?media=${item.mediaId}&type=${item.mediaType}`)}
                           >
                             Book Room
                           </button>
                           <button 
                             onClick={() => removeFromLibrary(item.mediaId, item.mediaType)}
-                            className="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-md transition-colors border border-red-500/50"
+                            className="p-2.5 lg:p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-md transition-colors border border-red-500/50"
                             title="Remove from Library"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">

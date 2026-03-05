@@ -110,7 +110,7 @@ export default function Navbar() {
         {/* Left Area: Hamburger & Logo */}
         <div className="flex items-center gap-4 md:gap-10">
           <button 
-            className="md:hidden text-white p-2"
+            className="md:hidden text-white p-3 hover:bg-white/10 rounded-xl transition"
             onClick={() => setShowMobileMenu(true)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
@@ -191,7 +191,7 @@ export default function Navbar() {
                 <ul className="py-2">
                   {searchResults.map((movie) => (
                     <li key={movie.id} className="hover:bg-gray-800 transition-colors">
-                      <Link href={`/movie/${movie.id}`} className="px-4 py-2 flex items-center gap-3 w-full" onClick={() => setShowDropdown(false)}>
+                      <Link href={`/movie/${movie.id}`} className="px-4 py-3 flex items-center gap-3 w-full" onClick={() => setShowDropdown(false)}>
                         <div className="relative w-10 h-14 bg-gray-800 rounded flex-shrink-0 overflow-hidden">
                           {movie.posterUrl ? (
                              <Image 
@@ -214,8 +214,8 @@ export default function Navbar() {
                       </Link>
                     </li>
                   ))}
-                  <li className="px-4 py-2 text-center border-t border-gray-800 mt-1">
-                     <button onClick={handleSearchSubmit} className="text-xs text-cinemac-blue hover:text-white font-semibold">
+                  <li className="px-4 py-3 text-center border-t border-gray-800 mt-1">
+                     <button onClick={handleSearchSubmit} className="text-sm p-2 w-full text-cinemac-blue hover:text-white font-bold">
                        See all results
                      </button>
                   </li>
@@ -280,7 +280,7 @@ export default function Navbar() {
           <div className="flex justify-end p-4">
             <button 
               onClick={() => setShowMobileMenu(false)}
-              className="text-white p-2"
+              className="text-white p-3 hover:bg-white/10 rounded-xl transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
