@@ -16,3 +16,25 @@
     display: none;
   }
 }
+
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@utility animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+@utility animation-delay-100 { animation-delay: 100ms; }
+@utility animation-delay-200 { animation-delay: 200ms; }
+@utility animation-delay-300 { animation-delay: 300ms; }
