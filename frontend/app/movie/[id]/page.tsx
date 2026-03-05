@@ -1,9 +1,9 @@
 import { movieService } from "../../../services/movieService";
 import Navbar from "../../../components/Navbar";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddToLibraryButton from "../../../components/AddToLibraryButton";
+import BackButton from "../../../components/BackButton";
 
 interface PageProps {
   params: {
@@ -25,12 +25,7 @@ export default async function MovieDetailsPage({ params }: PageProps) {
 
       <main className="relative pt-10 pb-20 px-6 md:px-10 max-w-[1920px] mx-auto">
         {/* Back Button */}
-        <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 group-hover:-translate-x-1 transition-transform">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-          <span className="font-semibold">Back to Home</span>
-        </Link>
+        <BackButton />
 
         {/* Content Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">

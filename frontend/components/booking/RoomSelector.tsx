@@ -48,7 +48,9 @@ export default function RoomSelector({ rooms, selectedRoom, onSelect }: RoomSele
                   {room.name}
                 </span>
                 <span className={`text-sm ${isSelected ? 'text-purple-300' : 'text-gray-500'}`}>
-                  Rs. {room.basePricePerHour} / hour
+                  {room.pricingType === 1
+                    ? `Rs. ${room.price} / booking`
+                    : `Rs. ${room.price} / hour`}
                 </span>
               </div>
             </button>

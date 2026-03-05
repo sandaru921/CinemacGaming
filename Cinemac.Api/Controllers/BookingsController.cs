@@ -85,12 +85,13 @@ namespace Cinemac.Api.Controllers
                 return Conflict("The requested time slot is unavailable. It overlaps with an existing booking.");
             }
 
-            // Calculate exact duration
+            // Calculate price based on room's pricing type
             TimeSpan duration = request.EndTime - request.StartTime;
             decimal hours = (decimal)duration.TotalHours;
             
-            // For example, if BasePricePerHour is 1000, 2.5 hours = 2500
-            decimal totalPrice = Math.Round(hours * room.BasePricePerHour, 2);
+            decimal totalPrice = room.PricingType == PricingType.PerBooking
+                ? room.Price  // flat rate regardless of duration
+                : Math.Round(hours * room.Price, 2); // per-hour rate
 
             var booking = new RoomBooking
             {
@@ -109,6 +110,70 @@ namespace Cinemac.Api.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(CreateBooking), new { id = booking.Id }, booking);
+        }
+
+        // GET: api/bookings/mybookings?email={email}
+        [HttpGet("mybookings")]
+        public async Task<IActionResult> GetUserBookings([FromQuery] string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return BadRequest("Email is required.");
+            }
+
+            var bookings = await _context.RoomBookings
+                .Include(b => b.Room)
+                .ThenInclude(r => r.Location)
+                .Where(b => b.CustomerEmail.ToLower() == email.ToLower())
+                .OrderByDescending(b => b.StartTime)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.CustomerName,
+                    b.CustomerEmail,
+                    b.StartTime,
+                    b.EndTime,
+                    b.TotalPrice,
+                    b.Status,
+                    b.PlayedMediaTitle,
+                    b.PlayedMediaType,
+                    Room = b.Room == null ? null : new
+                    {
+                        b.Room.Id,
+                        b.Room.Name,
+                        b.Room.Price,
+                        b.Room.PricingType,
+                        Location = b.Room.Location == null ? null : new
+                        {
+                            b.Room.Location.Id,
+                            b.Room.Location.Name
+                        }
+                    }
+                })
+                .ToListAsync();
+
+            return Ok(bookings);
+        }
+
+        // PUT: api/bookings/{id}/cancel
+        [HttpPut("{id}/cancel")]
+        public async Task<IActionResult> CancelBooking(Guid id)
+        {
+            var booking = await _context.RoomBookings.FindAsync(id);
+            if (booking == null)
+            {
+                return NotFound("Booking not found.");
+            }
+
+            if (booking.Status == BookingStatus.Cancelled)
+            {
+                return BadRequest("Booking is already cancelled.");
+            }
+
+            booking.Status = BookingStatus.Cancelled;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Booking cancelled successfully." });
         }
     }
 }

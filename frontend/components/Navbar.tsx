@@ -253,6 +253,14 @@ export default function Navbar() {
                     <p className="text-sm font-bold truncate">{username}</p>
                   </div>
                   
+                  <Link 
+                    href="/profile"
+                    onClick={() => setShowProfileDropdown(false)}
+                    className="block w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-800 hover:text-white font-bold transition-colors border-b border-gray-800"
+                  >
+                    My Profile
+                  </Link>
+
                   <button 
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-gray-800 font-bold transition-colors flex items-center gap-2"

@@ -13,7 +13,8 @@ export interface Room {
   id: string;
   locationId: string;
   name: string;
-  basePricePerHour: number;
+  price: number;
+  pricingType: 0 | 1; // 0 = PerHour, 1 = PerBooking
 }
 
 interface LocationSelectorProps {

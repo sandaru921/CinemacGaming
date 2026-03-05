@@ -129,6 +129,7 @@ export default function TimeSlotPicker({ roomId, onSlotSelected }: TimeSlotPicke
                {[2.5, 3.0, 3.5, 4.0, 4.5, 5.0].map(duration => (
                  <button
                    key={duration}
+                   type="button"
                    onClick={() => {
                      setDurationHours(duration);
                      setSelectedTime(""); // Reset time if duration changes since availability might change

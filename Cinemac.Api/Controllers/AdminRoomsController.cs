@@ -26,7 +26,8 @@ namespace Cinemac.Api.Controllers
         {
             public Guid LocationId { get; set; }
             public string Name { get; set; } = string.Empty;
-            public decimal BasePricePerHour { get; set; }
+            public decimal Price { get; set; }
+            public PricingType PricingType { get; set; } = PricingType.PerHour;
         }
 
         // POST: api/admin/rooms
@@ -41,7 +42,8 @@ namespace Cinemac.Api.Controllers
                 Id = Guid.NewGuid(),
                 LocationId = request.LocationId,
                 Name = request.Name,
-                BasePricePerHour = request.BasePricePerHour
+                Price = request.Price,
+                PricingType = request.PricingType
             };
 
             _context.Rooms.Add(room);
@@ -52,15 +54,14 @@ namespace Cinemac.Api.Controllers
 
         // PUT: api/admin/rooms/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRoom(Guid id, [FromBody] Room request)
+        public async Task<IActionResult> UpdateRoom(Guid id, [FromBody] CreateRoomDto request)
         {
-            if (id != request.Id) return BadRequest();
-
             var room = await _context.Rooms.FindAsync(id);
             if (room == null) return NotFound();
 
             room.Name = request.Name;
-            room.BasePricePerHour = request.BasePricePerHour;
+            room.Price = request.Price;
+            room.PricingType = request.PricingType;
 
             await _context.SaveChangesAsync();
 

@@ -165,26 +165,52 @@ function BookingForm() {
     }
   };
 
-  const totalPrice = selectedRoom && durationHours ? (selectedRoom.basePricePerHour * durationHours).toFixed(2) : "0.00";
+  const totalPrice = selectedRoom && durationHours
+    ? selectedRoom.pricingType === 1
+      ? selectedRoom.price.toFixed(2)                          // flat rate
+      : (selectedRoom.price * durationHours).toFixed(2)       // per hour
+    : "0.00";
 
   if (isSuccess) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(34,197,94,0.4)] animate-pulse">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-500">
+        <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(52,211,153,0.5)]">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-12 h-12 text-white">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         </div>
-        <h1 className="text-4xl md:text-5xl font-black mb-4">Booking Confirmed!</h1>
-        <p className="text-gray-400 max-w-lg mb-8 text-lg">
-          Your {durationHours}h gaming session in {selectedRoom?.name} at {selectedLocation?.name} has been successfully booked.
-        </p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors"
-        >
-          Book Another Room
-        </button>
+        <h1 className="text-4xl md:text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">Booking Confirmed!</h1>
+        <div className="text-gray-300 max-w-lg mb-8 text-base bg-gray-900/50 p-6 rounded-2xl border border-gray-800 text-left space-y-3">
+          <div className="flex justify-between"><span className="text-gray-400">Room</span><span className="font-bold text-white">{selectedRoom?.name}</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Location</span><span className="font-bold text-white">{selectedLocation?.name}</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Date</span><span className="font-bold text-white">{startTime?.toDateString()}</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Time</span><span className="font-bold text-cinemac-blue">{startTime?.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} – {endTime?.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Duration</span><span className="font-bold text-white">{durationHours}h</span></div>
+          <div className="flex justify-between border-t border-gray-800 pt-3"><span className="text-gray-400">Total Paid</span><span className="font-black text-green-400">Rs. {selectedRoom ? (selectedRoom.pricingType === 1 ? selectedRoom.price.toFixed(2) : (selectedRoom.price * durationHours).toFixed(2)) : "0.00"}</span></div>
+          {selectedMedia && (
+            <div className="flex justify-between border-t border-gray-800 pt-3"><span className="text-gray-400">Media</span><span className="font-bold text-purple-400 truncate max-w-[55%] text-right">{selectedMedia.mediaTitle}</span></div>
+          )}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-lg">
+          <button 
+            onClick={() => window.location.reload()}
+            className="flex-1 px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors"
+          >
+            Another Booking
+          </button>
+          <button 
+            onClick={() => router.push("/profile")}
+            className="flex-1 px-8 py-4 bg-gradient-to-r from-cinemac-blue to-purple-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20"
+          >
+            View My Bookings
+          </button>
+          <button 
+            onClick={() => router.push("/")}
+            className="flex-1 px-8 py-4 bg-gray-900 text-white border border-gray-700 font-bold rounded-xl hover:bg-gray-800 transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
       </div>
     );
   }
@@ -246,6 +272,14 @@ function BookingForm() {
                       </span>
                     </div>
                     <div className="flex justify-between text-sm mb-4"><span className="text-gray-400">Duration</span> <span className="font-bold">{durationHours} Hours</span></div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-400">Pricing</span>
+                      <span className="font-bold text-gray-300">
+                        {selectedRoom.pricingType === 1
+                          ? `Rs. ${selectedRoom.price} (flat rate)`
+                          : `Rs. ${selectedRoom.price} × ${durationHours}h`}
+                      </span>
+                    </div>
                     {selectedMedia && (
                       <div className="flex justify-between text-sm mb-2 border-t border-gray-800 pt-2">
                         <span className="text-gray-400">Selected Media</span> 
