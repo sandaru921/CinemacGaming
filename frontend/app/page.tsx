@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 /* ─── Animated Particle Canvas ─── */
 function ParticleCanvas() {
@@ -182,6 +183,8 @@ function StatCounter({ target, suffix, label }: { target: number; suffix: string
 
 /* ─── Main Page ─── */
 export default function LandingPage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden flex flex-col">
       <Navbar />
@@ -223,39 +226,39 @@ export default function LandingPage() {
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-fade-in-up">
-            <Link
-              href="/bookings"
+            <button
+              onClick={() => router.push("/bookings")}
               className="relative group px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-extrabold rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(99,102,241,0.5)] hover:shadow-[0_0_60px_rgba(99,102,241,0.7)] hover:scale-105 transition-all duration-300 w-full sm:w-auto"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity" />
-              <span className="relative flex items-center justify-center gap-2">
+              <span className="relative flex items-center justify-center gap-2 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                   <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-.53 14.03a.75.75 0 001.06 0l3-3a.75.75 0 10-1.06-1.06l-1.72 1.72V8.25a.75.75 0 00-1.5 0v5.69l-1.72-1.72a.75.75 0 00-1.06 1.06l3 3z" clipRule="evenodd" />
                 </svg>
                 Book a Room
               </span>
-            </Link>
+            </button>
 
-            <Link
-              href="/movies"
+            <button
+              onClick={() => router.push("/movies")}
               className="px-10 py-4 bg-white/5 border border-white/15 text-white font-bold rounded-2xl hover:bg-white/10 hover:border-white/30 transition-all duration-300 backdrop-blur-md w-full sm:w-auto flex items-center justify-center gap-2 hover:scale-105"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75.125..." />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 pointer-events-none">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375V5.625A2.625 2.625 0 018.625 3h6.75A2.625 2.625 0 0118 5.625v12.75c0 .621.504 1.125 1.125 1.125h1.5M9 7.5h6m-6 3h6m-6 3h6M6 21h12" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
               </svg>
-              Browse Movies
-            </Link>
+              <span className="pointer-events-none">Browse Movies</span>
+            </button>
 
-            <Link
-              href="/games"
+            <button
+              onClick={() => router.push("/games")}
               className="px-10 py-4 bg-white/5 border border-white/15 text-white font-bold rounded-2xl hover:bg-white/10 hover:border-white/30 transition-all duration-300 backdrop-blur-md w-full sm:w-auto flex items-center justify-center gap-2 hover:scale-105"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 pointer-events-none">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.563.563 0 01-.563.563H9.813a.563.563 0 01-.563-.563v0c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875S5.49 5.464 5.49 6.5c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.563.563 0 01-.563.563H2.813a.563.563 0 01-.563-.563v0c0-1.63.878-3.06 2.188-3.843M14.25 6.087V21m0-14.913C14.025 6.5 13.785 6.5 13.5 6.5h-3c-.285 0-.525 0-.75.087M14.25 21H9.75" />
               </svg>
-              Browse Games
-            </Link>
+              <span className="pointer-events-none">Browse Games</span>
+            </button>
           </div>
 
           {/* Scroll cue */}
@@ -367,31 +370,31 @@ export default function LandingPage() {
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Cinema */}
-          <div className="relative group rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-blue-950/60 to-black p-10 hover:border-blue-500/40 transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="text-6xl mb-6">🎬</div>
-            <h3 className="text-3xl font-black mb-4 text-white">Cinema Experience</h3>
-            <p className="text-gray-400 mb-8 leading-relaxed">Watch the latest blockbusters or timeless classics in a private, noise-free screening room with professional-grade display technology.</p>
-            <Link href="/movies" className="inline-flex items-center gap-2 font-bold text-blue-400 hover:text-blue-300 transition-colors group-hover:gap-3">
+          <div onClick={() => router.push("/movies")} className="relative group rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-blue-950/60 to-black p-10 hover:border-blue-500/40 transition-all duration-500 cursor-pointer">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="text-6xl mb-6 pointer-events-none">🎬</div>
+            <h3 className="text-3xl font-black mb-4 text-white pointer-events-none">Cinema Experience</h3>
+            <p className="text-gray-400 mb-8 leading-relaxed pointer-events-none">Watch the latest blockbusters or timeless classics in a private, noise-free screening room with professional-grade display technology.</p>
+            <span className="inline-flex items-center gap-2 font-bold text-blue-400 group-hover:text-blue-300 transition-colors group-hover:gap-3 pointer-events-none">
               Browse Movies
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
-            </Link>
+            </span>
           </div>
 
           {/* Gaming */}
-          <div className="relative group rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-purple-950/60 to-black p-10 hover:border-purple-500/40 transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="text-6xl mb-6">🎮</div>
-            <h3 className="text-3xl font-black mb-4 text-white">Gaming Experience</h3>
-            <p className="text-gray-400 mb-8 leading-relaxed">Dominate with top-tier peripherals, premium racing rigs, and a library of 50+ titles ranging from indie gems to AAA blockbusters.</p>
-            <Link href="/games" className="inline-flex items-center gap-2 font-bold text-purple-400 hover:text-purple-300 transition-colors group-hover:gap-3">
+          <div onClick={() => router.push("/games")} className="relative group rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-purple-950/60 to-black p-10 hover:border-purple-500/40 transition-all duration-500 cursor-pointer mt-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="text-6xl mb-6 pointer-events-none">🎮</div>
+            <h3 className="text-3xl font-black mb-4 text-white pointer-events-none">Gaming Experience</h3>
+            <p className="text-gray-400 mb-8 leading-relaxed pointer-events-none">Dominate with top-tier peripherals, premium racing rigs, and a library of 50+ titles ranging from indie gems to AAA blockbusters.</p>
+            <span className="inline-flex items-center gap-2 font-bold text-purple-400 group-hover:text-purple-300 transition-colors group-hover:gap-3 pointer-events-none">
               Browse Games
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
-            </Link>
+            </span>
           </div>
         </div>
       </section>

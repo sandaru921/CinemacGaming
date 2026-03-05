@@ -2,6 +2,8 @@ import Navbar from "../../components/Navbar";
 import MovieRow from "../../components/MovieRow";
 import { movieService } from "../../services/movieService";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   // Fetch massive catalog of categories simultaneously avoiding sequential blocking delays
   const [
