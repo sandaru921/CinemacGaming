@@ -70,21 +70,6 @@ export default function ProfilePage() {
     fetchBookings();
   }, [email]);
 
-  // Auto-dismiss cancelled bookings after 2 minutes
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
-    bookings.forEach((booking) => {
-      if (booking.status === 2) {
-        // Find when this booking was last in the list — schedule removal after 2 minutes
-        const timer = setTimeout(() => {
-          setBookings((prev) => prev.filter((b) => b.id !== booking.id));
-          setSelectedBooking((prev: any) => prev?.id === booking.id ? null : prev);
-        }, 2 * 60 * 1000);
-        timers.push(timer);
-      }
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [bookings]);
 
   const handleLogout = () => {
     localStorage.removeItem("cinemac_token");
@@ -102,8 +87,8 @@ export default function ProfilePage() {
         method: "PUT",
       });
       if (res.ok) {
-        setBookings((prev) => prev.map((b) => b.id === bookingId ? { ...b, status: 2 } : b));
-        setSelectedBooking((prev: any) => prev ? { ...prev, status: 2 } : prev);
+        setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+        setSelectedBooking(null);
       } else {
         alert("Failed to cancel booking.");
       }
@@ -152,33 +137,45 @@ export default function ProfilePage() {
               <div className="flex justify-center items-center py-20">
                 <div className="w-10 h-10 border-4 border-cinemac-blue border-t-transparent rounded-full animate-spin"></div>
               </div>
-            ) : bookings.length === 0 ? (
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-10 text-center">
-                <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+            ) : (() => {
+              const activeBookings = bookings.filter((b) => {
+                const isCancelled = b.status === 2;
+                const isPast = new Date(b.endTime) < new Date();
+                return !isCancelled && !isPast;
+              });
+
+              if (activeBookings.length === 0) {
+                return (
+                  <div className="bg-gray-900 border border-gray-800 rounded-2xl p-10 text-center">
+                    <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-500">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">No bookings yet</h3>
+                    <p className="text-gray-400 mb-6">You haven&apos;t made any room reservations yet.</p>
+                    <Link
+                      href="/bookings"
+                      className="inline-block bg-cinemac-blue text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors"
+                    >
+                      Book a Room Now
+                    </Link>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col gap-3">
+                  {activeBookings.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      onClick={setSelectedBooking}
+                    />
+                  ))}
                 </div>
-                <h3 className="text-xl font-bold mb-2">No bookings yet</h3>
-                <p className="text-gray-400 mb-6">You haven&apos;t made any room reservations yet.</p>
-                <Link
-                  href="/bookings"
-                  className="inline-block bg-cinemac-blue text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors"
-                >
-                  Book a Room Now
-                </Link>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {bookings.map((booking) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    onClick={setSelectedBooking}
-                  />
-                ))}
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       </main>
