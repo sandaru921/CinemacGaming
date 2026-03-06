@@ -39,6 +39,9 @@ builder.Services.AddHttpClient();
 // 2. TMDBService එක Register කිරීම
 builder.Services.AddScoped<ITMDBService, TMDBService>();
 
+// 3. ImageService (Cloudinary) Register කිරීම
+builder.Services.AddScoped<IImageService, CloudinaryService>();
+
 // Configure JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? "super_secret_fallback_key_that_must_be_long_1234567890";
 builder.Services.AddAuthentication(options =>

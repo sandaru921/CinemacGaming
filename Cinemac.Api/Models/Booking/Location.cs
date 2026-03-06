@@ -7,6 +7,8 @@ namespace Cinemac.Api.Models.Booking
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = string.Empty; // e.g., "Colombo Branch", "Kandy Branch"
+        public string? ImageUrl { get; set; }
+        public string? GoogleMapUrl { get; set; }
 
         // Navigation Property: One Location has Many Rooms
         public ICollection<Room> Rooms { get; set; } = new List<Room>();

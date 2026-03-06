@@ -7,6 +7,8 @@ export interface Location {
   id: string;
   name: string;
   rooms: Room[];
+  imageUrl?: string;
+  googleMapUrl?: string;
 }
 
 export interface Room {
@@ -34,8 +36,8 @@ export default function LocationSelector({ locations, selectedLocation, onSelect
             type="button"
             onClick={() => onSelect(loc)}
             className={`p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-3
-              ${selectedLocation?.id === loc.id 
-                ? 'bg-cinemac-blue/20 border-cinemac-blue shadow-[0_0_20px_rgba(59,130,246,0.3)]' 
+              ${selectedLocation?.id === loc.id
+                ? 'bg-cinemac-blue/20 border-cinemac-blue shadow-[0_0_20px_rgba(59,130,246,0.3)]'
                 : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30'
               }`}
           >
@@ -46,6 +48,12 @@ export default function LocationSelector({ locations, selectedLocation, onSelect
             <span className={`font-bold text-lg ${selectedLocation?.id === loc.id ? 'text-white' : 'text-gray-300'}`}>
               {loc.name}
             </span>
+            {loc.imageUrl && (
+              <img src={loc.imageUrl} alt={loc.name} className="w-24 h-24 object-cover rounded mb-2" />
+            )}
+            {loc.googleMapUrl && (
+              <a href={loc.googleMapUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-cinemac-blue mt-1">View on Map</a>
+            )}
             <span className="text-xs text-gray-500">{loc.rooms?.length || 0} gaming rooms</span>
           </button>
         ))}

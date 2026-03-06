@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Cinemac.Api.Data;
 using Cinemac.Api.Models.Booking;
+using Microsoft.AspNetCore.Http;
+using Cinemac.Api.Services;
 
 namespace Cinemac.Api.Controllers
 {
@@ -16,10 +18,12 @@ namespace Cinemac.Api.Controllers
     public class AdminLocationsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IImageService _imageService;
 
-        public AdminLocationsController(AppDbContext context)
+        public AdminLocationsController(AppDbContext context, IImageService imageService)
         {
             _context = context;
+            _imageService = imageService;
         }
 
         // GET: api/admin/locations
@@ -73,6 +77,22 @@ namespace Cinemac.Api.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        // POST: api/admin/locations/{id}/image
+        [HttpPost("{id}/image")]
+        public async Task<ActionResult<string>> UploadLocationImage(Guid id, IFormFile file)
+        {
+            var location = await _context.Locations.FindAsync(id);
+            if (location == null) return NotFound();
+
+            var imageUrl = await _imageService.UploadImageAsync(file);
+            if (!string.IsNullOrEmpty(imageUrl))
+            {
+                location.ImageUrl = imageUrl;
+                await _context.SaveChangesAsync();
+            }
+            return Ok(new { imageUrl });
         }
 
         private bool LocationExists(Guid id)

@@ -7,6 +7,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5
 export default function AdminLocations() {
   const [locations, setLocations] = useState<any[]>([]);
   const [newLocName, setNewLocName] = useState("");
+  const [newMapUrl, setNewMapUrl] = useState("");
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+
 
   const fetchLocations = async () => {
     try {
@@ -23,15 +26,32 @@ export default function AdminLocations() {
     e.preventDefault();
     if (!newLocName) return;
 
-    await fetch(`${API_BASE_URL}/admin/AdminLocations`, {
+    // Create location with name and Google Map URL
+    const res = await fetch(`${API_BASE_URL}/admin/AdminLocations`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("adminToken")}` 
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`
       },
-      body: JSON.stringify({ name: newLocName })
+      body: JSON.stringify({ name: newLocName, googleMapUrl: newMapUrl })
     });
+    const createdLocation = await res.json();
+
+    // Upload image if selected
+    if (newImageFile && createdLocation?.id) {
+      const form = new FormData();
+      form.append("file", newImageFile);
+      await fetch(`${API_BASE_URL}/admin/AdminLocations/${createdLocation.id}/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+        body: form
+      });
+    }
+
+    // Reset fields
     setNewLocName("");
+    setNewMapUrl("");
+    setNewImageFile(null);
     fetchLocations();
   };
 
@@ -64,6 +84,24 @@ export default function AdminLocations() {
                 placeholder="e.g. Galle Branch" 
               />
             </div>
+            <div>
+              <label className="text-sm font-semibold text-gray-400">Google Map URL</label>
+              <input 
+                value={newMapUrl} 
+                onChange={e => setNewMapUrl(e.target.value)} 
+                className="w-full mt-2 bg-black border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-cinemac-blue outline-none"
+                placeholder="https://maps.google.com/..."
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-gray-400">Location Image</label>
+              <input 
+                type="file"
+                accept="image/*"
+                onChange={e => setNewImageFile(e.target.files?.[0] || null)}
+                className="w-full mt-2 text-white"
+              />
+            </div>
             <button type="submit" className="w-full bg-cinemac-blue text-white font-bold py-3 rounded-xl hover:bg-blue-600">Create</button>
           </form>
         </div>
@@ -72,10 +110,18 @@ export default function AdminLocations() {
         <div className="lg:col-span-2 space-y-4">
           {locations.map(loc => (
             <div key={loc.id} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl flex items-center justify-between">
-               <div>
-                  <h4 className="text-xl font-bold">{loc.name}</h4>
-                  <p className="text-sm text-gray-500">{loc.id}</p>
-                  <p className="text-xs text-cinemac-blue mt-1">{loc.rooms?.length || 0} Rooms defined</p>
+               <div className="flex items-center gap-4">
+                  {loc.imageUrl && (
+                    <img src={loc.imageUrl} alt={loc.name} className="w-12 h-12 object-cover rounded" />
+                  )}
+                  <div>
+                    <h4 className="text-xl font-bold">{loc.name}</h4>
+                    <p className="text-sm text-gray-500">{loc.id}</p>
+                    {loc.googleMapUrl && (
+                      <a href={loc.googleMapUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-cinemac-blue mt-1 block">View on Map</a>
+                    )}
+                    <p className="text-xs text-cinemac-blue mt-1">{loc.rooms?.length || 0} Rooms defined</p>
+                  </div>
                </div>
                <button 
                  onClick={() => handleDelete(loc.id)}
