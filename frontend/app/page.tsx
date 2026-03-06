@@ -184,6 +184,21 @@ function StatCounter({ target, suffix, label }: { target: number; suffix: string
 /* ─── Main Page ─── */
 export default function LandingPage() {
   const router = useRouter();
+ const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    const handleEnded = () => {
+      setTimeout(() => {
+        vid.play();
+      }, 3000);
+    };
+    vid.addEventListener('ended', handleEnded);
+    return () => {
+      vid.removeEventListener('ended', handleEnded);
+    };
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden flex flex-col">
@@ -191,6 +206,19 @@ export default function LandingPage() {
 
       {/* ── HERO ── */}
       <main className="relative flex flex-col items-center justify-center text-center px-6 min-h-screen">
+        {/* Video background */}
+        <video
+          ref={videoRef}
+          src="https://res.cloudinary.com/ddyrfscxm/video/upload/q_auto,f_auto/v1772776004/cinemac_banner_2_wadyx5.mov"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {/* Tint overlay */}
+        <div className="absolute inset-0 bg-black/40" />
         <ParticleCanvas />
 
         {/* Deep glow blobs */}
@@ -199,7 +227,6 @@ export default function LandingPage() {
           <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[140px]" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[100px]" />
         </div>
-
         <div className="relative z-10 max-w-5xl mx-auto space-y-8">
           {/* Badge */}
           <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 text-sm font-semibold text-gray-300 backdrop-blur-md animate-fade-in-up">
@@ -211,16 +238,16 @@ export default function LandingPage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.95] animate-fade-in-up">
-            <span className="block text-white">Cinema.</span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400">
-              Gaming.
-            </span>
-            <span className="block text-white/30">Reimagined.</span>
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.95] animate-fade-in-up" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
+            <span className="block text-white/90">Cinema</span>
+         <span className="block text-white/70 bg-clip-text bg-gradient-to-r from-cyan-200 via-blue-300 to-indigo-200 drop-shadow-[0_0_15px_rgba(165,243,252,0.6)]">
+  Gaming
+</span>
+            <span className="block text-white/50">Reimagined</span>
           </h1>
 
           {/* Subheadline */}
-          <p className="max-w-xl mx-auto text-lg md:text-xl text-gray-400 leading-relaxed animate-fade-in-up">
+          <p className="max-w-xl mx-auto text-lg md:text-xl text-gray-100 leading-relaxed animate-fade-in-up" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
             Private gaming rooms. Blockbuster screenings. One experience built for those who demand the best.
           </p>
 
