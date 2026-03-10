@@ -61,6 +61,7 @@ namespace Cinemac.Api.Models.Booking
         Web,
         WhatsApp,
         Manual,
-        WalkIn
+        WalkIn,
+        Admin
     }
 }

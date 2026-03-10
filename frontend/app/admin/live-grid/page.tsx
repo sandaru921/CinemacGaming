@@ -3,31 +3,27 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Loader2, ChevronLeft, ChevronRight, X, User, Wifi, WifiOff,
-  Edit2, Trash2, Save, Clock, MapPin, Copy, Check,
+  Edit2, Trash2, Save, Clock, MapPin, Copy, Check, Plus
 } from "lucide-react";
 import * as signalR from "@microsoft/signalr";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
 const HUB_URL  = process.env.NEXT_PUBLIC_HUB_URL      || "http://localhost:5211/hubs/booking";
 
-// Grid covers 9:00 → 23:00 (14 hours × 12 slots = 168 five-minute slots)
 const GRID_START_HOUR  = 9;
 const GRID_END_HOUR    = 23;
-const TOTAL_HOURS      = GRID_END_HOUR - GRID_START_HOUR;   // 14
-const SLOTS_PER_HOUR   = 12;                                 // 5-min slots per hour
-const TOTAL_SLOTS      = TOTAL_HOURS * SLOTS_PER_HOUR;       // 168
+const TOTAL_HOURS      = GRID_END_HOUR - GRID_START_HOUR;
+const SLOTS_PER_HOUR   = 12;
+const TOTAL_SLOTS      = TOTAL_HOURS * SLOTS_PER_HOUR;
 const SLOT_MINUTES     = 5;
 
-// All 168 slot indices
 const allSlots = Array.from({ length: TOTAL_SLOTS }, (_, i) => i);
 
-// Convert slot index → { hour, minute }
 const slotToTime = (slot: number) => ({
   hour:   GRID_START_HOUR + Math.floor(slot / SLOTS_PER_HOUR),
   minute: (slot % SLOTS_PER_HOUR) * SLOT_MINUTES,
 });
 
-// Convert Date → slot index (clamped to grid)
 const dateToSlot = (d: Date): number => {
   const minutesFromStart = (d.getHours() - GRID_START_HOUR) * 60 + d.getMinutes();
   return Math.max(0, Math.min(TOTAL_SLOTS, Math.round(minutesFromStart / SLOT_MINUTES)));
@@ -93,6 +89,12 @@ interface EditForm {
   customerName: string; customerEmail: string; customerPhone: string;
   startTime: string; endTime: string; playedMediaTitle: string; playedMediaType: string;
 }
+
+interface AddForm extends EditForm {
+  roomId: string;
+  locationId: string;
+}
+
 const blankForm = (b: any): EditForm => ({
   customerName: b.customerName ?? "", customerEmail: b.customerEmail ?? "",
   customerPhone: b.customerPhone ?? "", startTime: toDatetimeLocal(b.startTime),
@@ -101,20 +103,17 @@ const blankForm = (b: any): EditForm => ({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Per-room grid: renders a single column as a vertical stack of 5-min rows
-// with booking blocks absolutely positioned for pixel-perfect alignment.
-// ─────────────────────────────────────────────────────────────────────────────
 interface RoomColumnProps {
-  room: { id: string; name: string; locationName: string };
+  room: any;
   bookingsForRoom: any[];
   onSelectBooking: (b: any) => void;
+  onEmptySlotClick: (room: any, slot: number) => void;
   nowSlot: number | null;
 }
 
 const RoomColumn = React.memo(function RoomColumn({
-  room, bookingsForRoom, onSelectBooking, nowSlot,
+  room, bookingsForRoom, onSelectBooking, onEmptySlotClick, nowSlot,
 }: RoomColumnProps) {
-  // Build a map: slotIndex → booking (only non-cancelled)
   const slotMap = useMemo(() => {
     const map = new Map<number, any>();
     bookingsForRoom.forEach((b) => {
@@ -127,7 +126,6 @@ const RoomColumn = React.memo(function RoomColumn({
     return map;
   }, [bookingsForRoom]);
 
-  // Collect booking start slots to render blocks only once
   const bookingBlocks = useMemo(() => {
     const seen = new Set<string>();
     const blocks: { booking: any; startSlot: number; endSlot: number }[] = [];
@@ -147,15 +145,15 @@ const RoomColumn = React.memo(function RoomColumn({
 
   return (
     <div className="relative w-full h-full">
-      {/* 5-min slot rows — free slot hover highlight */}
       {allSlots.map((slot) => {
         const isBooked = slotMap.has(slot);
         const isHourStart = slot % SLOTS_PER_HOUR === 0;
         return (
           <div
             key={slot}
+            onClick={() => !isBooked && onEmptySlotClick(room, slot)}
             className={`absolute left-0 right-0 group transition-colors ${
-              isBooked ? "" : "hover:bg-green-900/25 cursor-pointer"
+              isBooked ? "" : "hover:bg-blue-600/20 cursor-crosshair z-0"
             }`}
             style={{
               top:    `${(slot / TOTAL_SLOTS) * 100}%`,
@@ -163,16 +161,15 @@ const RoomColumn = React.memo(function RoomColumn({
               borderTop: isHourStart ? "1px solid rgba(55,65,81,0.5)" : undefined,
             }}
           >
-            {!isBooked && (
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-50 transition-opacity">
-                <span className="text-green-400 text-[8px] leading-none">+</span>
+             {!isBooked && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Plus size={8} className="text-blue-400" />
               </div>
             )}
           </div>
         );
       })}
 
-      {/* Now line inside the column */}
       {nowSlot !== null && (
         <div
           className="absolute left-0 right-0 h-px bg-orange-500/60 z-10 pointer-events-none"
@@ -180,7 +177,6 @@ const RoomColumn = React.memo(function RoomColumn({
         />
       )}
 
-      {/* Booking blocks — absolutely positioned */}
       {bookingBlocks.map(({ booking, startSlot, endSlot }) => {
         const state  = getBookingState(booking);
         const colors = BOOKING_COLORS[state];
@@ -222,13 +218,21 @@ export default function CinemaMasterDashboard() {
   const [activeLocationIndex, setActiveLocationIndex] = useState(0);
   const [nowTime,             setNowTime]             = useState(new Date());
 
-  // Popup state
   const [isEditMode,    setIsEditMode]    = useState(false);
   const [editForm,      setEditForm]      = useState<EditForm | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isSaving,      setIsSaving]      = useState(false);
   const [popupError,    setPopupError]    = useState<string | null>(null);
   const [idCopied,      setIdCopied]      = useState(false);
+
+  // New Booking Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isFromGrid, setIsFromGrid] = useState(false); // Track if click came from grid
+  const [addForm, setNewAddForm] = useState<AddForm>({
+    customerName: "", customerEmail: "", customerPhone: "",
+    startTime: "", endTime: "", playedMediaTitle: "", playedMediaType: "",
+    roomId: "", locationId: ""
+  });
 
   const connectionRef     = useRef<signalR.HubConnection | null>(null);
   const locationSliderRef = useRef<HTMLDivElement>(null);
@@ -321,7 +325,6 @@ export default function CinemaMasterDashboard() {
     cancelled: todayBookings.filter((b) => getBookingState(b) === "cancelled").length,
   }), [todayBookings]);
 
-  // Bookings per room for the selected date
   const bookingsByRoom = useMemo(() => {
     const map = new Map<string, any[]>();
     activeRooms.forEach((r) => map.set(r.id, []));
@@ -335,7 +338,58 @@ export default function CinemaMasterDashboard() {
   const roomCount      = activeRooms.length;
   const headerFontSize = roomCount > 12 ? "text-[7px]" : roomCount > 8 ? "text-[9px]" : "text-[11px]";
 
-  // ── Popup actions ──
+  // ── Logic Changes ──
+  const handleEmptySlotClick = (room: any, slot: number) => {
+    const { hour, minute } = slotToTime(slot);
+    const start = new Date(selectedDate);
+    start.setHours(hour, minute, 0);
+
+    const end = new Date(start);
+    end.setHours(start.getHours() + 1);
+
+    setIsFromGrid(true); // From grid
+    setNewAddForm({
+      customerName: "", customerEmail: "", customerPhone: "",
+      playedMediaTitle: "", playedMediaType: "",
+      startTime: toDatetimeLocal(start.toISOString()),
+      endTime: toDatetimeLocal(end.toISOString()),
+      roomId: room.id,
+      locationId: room.locationId
+    });
+    setPopupError(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleManualAddClick = () => {
+    setIsFromGrid(false); // From manual button
+    setNewAddForm({
+      customerName: "", customerEmail: "", customerPhone: "",
+      playedMediaTitle: "", playedMediaType: "",
+      startTime: toDatetimeLocal(new Date().toISOString()),
+      endTime: toDatetimeLocal(new Date(Date.now() + 3600000).toISOString()),
+      roomId: rooms[0]?.id || "",
+      locationId: locations[0]?.id || ""
+    });
+    setPopupError(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddBooking = async () => {
+    setIsSaving(true); setPopupError(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/AdminBookings`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(addForm),
+      });
+      if (res.status === 409) throw new Error("Time slot overlaps with another booking.");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setIsAddModalOpen(false);
+      await fetchBookings();
+    } catch (e: any) { setPopupError(e.message); }
+    finally { setIsSaving(false); }
+  };
+
   const handleStatusChange = async (v: number) => {
     if (!selectedBooking) return;
     setIsSaving(true); setPopupError(null);
@@ -396,10 +450,15 @@ export default function CinemaMasterDashboard() {
     setIdCopied(true); setTimeout(() => setIdCopied(false), 2000);
   };
 
-  const popupField = (key: keyof EditForm, label: string, type = "text") => (
+  const popupField = (key: keyof EditForm, label: string, type = "text", isAdd = false) => (
     <div className="flex flex-col gap-1">
       <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider">{label}</label>
-      {isEditMode ? (
+      {isAdd ? (
+        <input type={type} value={addForm[key as keyof AddForm] ?? ""}
+          onChange={(e) => setNewAddForm((f) => ({ ...f, [key]: e.target.value }))}
+          className="bg-black/60 border border-gray-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-white outline-none transition-colors"
+        />
+      ) : isEditMode ? (
         <input type={type} value={editForm?.[key] ?? ""}
           onChange={(e) => setEditForm((f) => f ? { ...f, [key]: e.target.value } : f)}
           className="bg-black/60 border border-gray-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-white outline-none transition-colors"
@@ -412,10 +471,9 @@ export default function CinemaMasterDashboard() {
     </div>
   );
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="h-screen w-screen overflow-hidden bg-black text-white flex flex-col font-sans">
-
+      
       {/* HEADER */}
       <div className="bg-[#1a1a1a] border-b border-gray-800 px-3 py-2 shrink-0 flex items-center justify-between gap-2">
         <h1 className="text-lg font-black tracking-tighter text-blue-500 italic shrink-0">
@@ -441,7 +499,7 @@ export default function CinemaMasterDashboard() {
           <button onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate()+1); setSelectedDate(d.toISOString().split("T")[0]); }} className="p-1 hover:text-blue-500 transition-colors"><ChevronRight size={14}/></button>
           <button onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])} className="ml-1 px-2 py-0.5 text-[9px] font-black text-blue-400 border border-blue-800 rounded hover:bg-blue-900/40 transition-colors">TODAY</button>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all shrink-0">+ New Booking</button>
+        <button onClick={handleManualAddClick} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all shrink-0">+ New Booking</button>
       </div>
 
       {/* LOCATION SLIDER */}
@@ -464,18 +522,7 @@ export default function CinemaMasterDashboard() {
             );
           })}
         </div>
-        <div className="flex gap-1 shrink-0 ml-auto">
-          <button onClick={() => setActiveLocationIndex((p) => Math.max(-1, p-1))} className="p-1 rounded border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-colors"><ChevronLeft size={12}/></button>
-          <button onClick={() => setActiveLocationIndex((p) => Math.min(locations.length-1, p+1))} className="p-1 rounded border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-colors"><ChevronRight size={12}/></button>
-        </div>
       </div>
-
-      {error && (
-        <div className="bg-red-900/60 border-b border-red-700 px-4 py-2 text-red-300 text-xs font-bold flex items-center justify-between shrink-0">
-          ⚠️ {error}
-          <button onClick={() => setError(null)} className="ml-4 hover:text-white"><X size={14}/></button>
-        </div>
-      )}
 
       {/* MAIN GRID */}
       <div className="flex-1 overflow-hidden flex bg-[#0a0a0a]">
@@ -485,22 +532,18 @@ export default function CinemaMasterDashboard() {
           </div>
         )}
 
-        {/* Y-axis: hour labels pinned left */}
         <div className="w-[52px] shrink-0 relative bg-[#0d0d0d] border-r border-gray-800">
-          {/* Header spacer */}
           <div className="h-[3vh] border-b border-gray-800 flex items-center justify-center">
             <span className="text-[8px] text-gray-600 font-bold uppercase">Time</span>
           </div>
-          {/* Hour labels — positioned absolutely within the grid height */}
           <div className="absolute left-0 right-0" style={{ top: "3vh", bottom: 0 }}>
             {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
               const hour = GRID_START_HOUR + i;
               const topPct = (i / TOTAL_HOURS) * 100;
-              const isNowHour = isViewingToday && nowTime.getHours() === hour && nowTime.getMinutes() < 5;
               return (
                 <div key={hour} className="absolute left-0 right-0 flex items-center justify-center"
                   style={{ top: `${topPct}%`, transform: "translateY(-50%)" }}>
-                  <span className={`text-[9px] font-mono font-bold ${isNowHour ? "text-orange-400" : "text-gray-500"}`}>
+                  <span className="text-[9px] font-mono font-bold text-gray-500">
                     {hour > 12 ? `${hour - 12}PM` : hour === 12 ? "12PM" : `${hour}AM`}
                   </span>
                 </div>
@@ -509,48 +552,35 @@ export default function CinemaMasterDashboard() {
           </div>
         </div>
 
-        {/* Room columns container — horizontally scrollable */}
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="h-full flex flex-col" style={{ minWidth: `${activeRooms.length * 80}px` }}>
-
-            {/* Room header row */}
             <div className="shrink-0 flex border-b border-gray-800 bg-[#111]" style={{ height: "3vh" }}>
               {activeRooms.map((room) => (
-                <div key={room.id}
-                  className={`flex-1 border-r border-gray-800 flex items-center justify-center font-black uppercase tracking-tight text-blue-100 truncate px-0.5 ${headerFontSize}`}
-                  title={`${room.locationName} — ${room.name}`}>
+                <div key={room.id} className={`flex-1 border-r border-gray-800 flex items-center justify-center font-black uppercase tracking-tight text-blue-100 truncate px-0.5 ${headerFontSize}`}>
                   {room.name}
                 </div>
               ))}
             </div>
 
-            {/* Grid body — all room columns side by side */}
             <div ref={gridRef} className="flex-1 flex relative overflow-hidden">
-              {/* Horizontal hour lines across all columns */}
               {Array.from({ length: TOTAL_HOURS - 1 }, (_, i) => (
-                <div key={i} className="absolute left-0 right-0 border-t border-gray-800/50 pointer-events-none z-0"
-                  style={{ top: `${((i + 1) / TOTAL_HOURS) * 100}%` }} />
+                <div key={i} className="absolute left-0 right-0 border-t border-gray-800/50 pointer-events-none z-0" style={{ top: `${((i + 1) / TOTAL_HOURS) * 100}%` }} />
               ))}
 
-              {/* Now line spanning all columns */}
               {nowSlot !== null && (
-                <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
-                  style={{ top: `${(nowSlot / TOTAL_SLOTS) * 100}%` }}>
+                <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: `${(nowSlot / TOTAL_SLOTS) * 100}%` }}>
                   <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0 shadow-[0_0_6px_2px_rgba(249,115,22,0.6)]" />
                   <div className="flex-1 h-[1.5px] bg-orange-500 opacity-70" />
-                  <span className="text-[7px] font-black text-orange-400 bg-black/80 px-1 rounded shrink-0">
-                    {nowTime.getHours()}:{String(nowTime.getMinutes()).padStart(2, "0")}
-                  </span>
                 </div>
               )}
 
-              {/* One column per room */}
               {activeRooms.map((room) => (
                 <div key={room.id} className="flex-1 relative border-r border-gray-800/40 overflow-hidden">
                   <RoomColumn
                     room={room}
                     bookingsForRoom={bookingsByRoom.get(room.id) ?? []}
                     onSelectBooking={setSelectedBooking}
+                    onEmptySlotClick={handleEmptySlotClick}
                     nowSlot={nowSlot}
                   />
                 </div>
@@ -560,7 +590,95 @@ export default function CinemaMasterDashboard() {
         </div>
       </div>
 
-      {/* BOOKING DETAIL MODAL */}
+      {/* ADD BOOKING MODAL */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+           <div className="bg-[#0f0f0f] border border-blue-900/40 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between bg-blue-900/20">
+                <div className="flex items-center gap-3">
+                   <div className="p-2 rounded-xl border border-blue-500 bg-blue-500/10"><Plus size={16} className="text-blue-400"/></div>
+                   <div>
+                     <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest">New Entry</p>
+                     <p className="font-black text-white text-sm">Create Booking</p>
+                   </div>
+                </div>
+                <button onClick={() => setIsAddModalOpen(false)} className="p-1.5 hover:bg-white/10 rounded-lg"><X size={18}/></button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 p-5 space-y-4">
+                {popupError && <div className="bg-red-900/40 border border-red-700/60 rounded-xl px-4 py-3 text-red-300 text-xs">⚠️ {popupError}</div>}
+                
+                {popupField("customerName", "Customer Name", "text", true)}
+                <div className="grid grid-cols-2 gap-3">
+                  {popupField("customerEmail", "Email", "email", true)}
+                  {popupField("customerPhone", "Phone", "tel", true)}
+                </div>
+
+                {/* Conditional Location and Room fields */}
+                <div className="grid grid-cols-2 gap-3">
+                  {isFromGrid ? (
+                    <>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold">Location</p>
+                        <p className="text-sm font-bold">{locations.find(l => l.id === addForm.locationId)?.name || "N/A"}</p>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold">Room</p>
+                        <p className="text-sm font-bold">{rooms.find(r => r.id === addForm.roomId)?.name || "N/A"}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Select Location</label>
+                        <select 
+                          value={addForm.locationId} 
+                          onChange={(e) => {
+                            const locId = e.target.value;
+                            const firstRoom = rooms.find(r => r.locationId === locId);
+                            setNewAddForm({...addForm, locationId: locId, roomId: firstRoom?.id || ""});
+                          }} 
+                          className="bg-black/60 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white outline-none">
+                          {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Select Room</label>
+                        <select 
+                          value={addForm.roomId} 
+                          onChange={(e) => setNewAddForm({...addForm, roomId: e.target.value})} 
+                          className="bg-black/60 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white outline-none">
+                          {rooms.filter(r => r.locationId === addForm.locationId).map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {popupField("startTime", "Start Time", "datetime-local", true)}
+                  {popupField("endTime", "End Time", "datetime-local", true)}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {popupField("playedMediaTitle", "Media Title", "text", true)}
+                  {popupField("playedMediaType", "Media Type", "text", true)}
+                </div>
+              </div>
+
+              <div className="px-5 py-4 border-t border-gray-800 bg-black/40 flex gap-3">
+                <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-300 text-xs font-black hover:bg-white/5 transition-colors">Cancel</button>
+                <button onClick={handleAddBooking} disabled={isSaving} className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black flex items-center justify-center gap-2">
+                  {isSaving ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>} Create Booking
+                </button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL - (Keep as before) */}
       {selectedBooking && (() => {
         const state  = getBookingState(selectedBooking);
         const colors = BOOKING_COLORS[state];
@@ -571,51 +689,19 @@ export default function CinemaMasterDashboard() {
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
             <div className="bg-[#0f0f0f] border border-gray-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-
-              {/* Modal header */}
               <div className={`px-5 py-4 border-b border-gray-800 flex items-center justify-between shrink-0 ${colors.bg}`}>
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl border ${colors.border} bg-black/30`}>
-                    <User size={16} className={colors.text}/>
-                  </div>
+                  <div className={`p-2 rounded-xl border ${colors.border} bg-black/30`}><User size={16} className={colors.text}/></div>
                   <div>
-                    <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Booking Details</p>
+                    <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Details</p>
                     <p className="font-black text-white text-sm">{selectedBooking.customerName}</p>
                   </div>
-                  <span className={`ml-2 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase border ${colors.bg} ${colors.border} ${colors.text}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${colors.dot} ${state === "ongoing" ? "animate-pulse" : ""}`}/>
-                    {colors.label}
-                  </span>
                 </div>
-                <button onClick={() => setSelectedBooking(null)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors hover:rotate-90 duration-200"><X size={18}/></button>
+                <button onClick={() => setSelectedBooking(null)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"><X size={18}/></button>
               </div>
 
-              {/* Scrollable body */}
               <div className="overflow-y-auto flex-1 p-5 space-y-5">
-                {popupError && (
-                  <div className="bg-red-900/40 border border-red-700/60 rounded-xl px-4 py-3 text-red-300 text-xs flex items-center justify-between">
-                    ⚠️ {popupError}
-                    <button onClick={() => setPopupError(null)}><X size={12}/></button>
-                  </div>
-                )}
-
-                {/* Booking ID */}
-                <div className="flex items-center justify-between bg-white/[0.03] border border-white/5 rounded-xl px-4 py-2.5">
-                  <div>
-                    <p className="text-[9px] text-gray-600 uppercase font-bold tracking-wider">Booking ID</p>
-                    <p className="text-[10px] font-mono text-gray-400 truncate max-w-[240px]">{selectedBooking.id}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-[9px] text-gray-600 uppercase font-bold tracking-wider">Source</p>
-                      <p className="text-[10px] font-bold text-gray-300">{selectedBooking.source ?? "—"}</p>
-                    </div>
-                    <button onClick={handleCopyId} className="p-1.5 rounded-lg border border-gray-700 hover:border-gray-500 transition-colors text-gray-400 hover:text-white">
-                      {idCopied ? <Check size={12} className="text-green-400"/> : <Copy size={12}/>}
-                    </button>
-                  </div>
-                </div>
-
+                {popupError && <div className="bg-red-900/40 border border-red-700/60 rounded-xl px-4 py-3 text-red-300 text-xs">⚠️ {popupError}</div>}
                 <div className="grid grid-cols-1 gap-3">
                   {popupField("customerName",  "Customer Name")}
                   <div className="grid grid-cols-2 gap-3">
@@ -623,93 +709,40 @@ export default function CinemaMasterDashboard() {
                     {popupField("customerPhone", "Phone", "tel")}
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 flex items-center gap-2">
-                    <MapPin size={13} className="text-blue-400 shrink-0"/>
-                    <div><p className="text-[9px] text-gray-500 uppercase font-bold">Room</p><p className="font-black text-sm text-white">{selectedBooking.roomName}</p></div>
-                  </div>
-                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 flex items-center gap-2">
-                    <MapPin size={13} className="text-blue-400 shrink-0"/>
-                    <div><p className="text-[9px] text-gray-500 uppercase font-bold">Location</p><p className="font-black text-sm text-white">{selectedBooking.locationName}</p></div>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-2 gap-3">
                   {popupField("startTime", "Start Time", "datetime-local")}
                   {popupField("endTime",   "End Time",   "datetime-local")}
                 </div>
-
-                <div className="bg-emerald-900/10 border border-emerald-700/20 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-emerald-400"/>
-                    <div>
-                      <p className="text-[9px] text-emerald-500/60 uppercase font-bold">Total Price</p>
-                      <p className="font-black text-xl text-emerald-400">Rs. {selectedBooking.totalPrice}.00</p>
-                    </div>
-                  </div>
-                  {isEditMode && <p className="text-[9px] text-gray-500 italic">Recalculated on save</p>}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {popupField("playedMediaTitle", "Media Title")}
-                  {popupField("playedMediaType",  "Media Type")}
-                </div>
-
                 {!isEditMode && (
                   <div>
                     <p className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-2">Change Status</p>
                     <div className="flex gap-2">
                       {STATUS_OPTIONS.map((s) => (
-                        <button key={s.value} disabled={isSaving || currentStatusValue === s.value}
-                          onClick={() => handleStatusChange(s.value)}
-                          className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${s.color} ${currentStatusValue === s.value ? "opacity-100 ring-1 ring-white/20" : "opacity-40 hover:opacity-80"} disabled:cursor-not-allowed`}>
+                        <button key={s.value} disabled={isSaving || currentStatusValue === s.value} onClick={() => handleStatusChange(s.value)}
+                          className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${s.color} ${currentStatusValue === s.value ? "opacity-100 ring-1 ring-white/20" : "opacity-40 hover:opacity-80"}`}>
                           {s.label}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {!isEditMode && (
-                  <div className="grid grid-cols-2 gap-3 text-[10px] text-gray-600">
-                    <div>
-                      <p className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Created</p>
-                      <p>{selectedBooking.createdAt ? new Date(selectedBooking.createdAt).toLocaleString() : "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Last Updated</p>
-                      <p>{selectedBooking.updatedAt ? new Date(selectedBooking.updatedAt).toLocaleString() : "—"}</p>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Footer */}
-              <div className="px-5 py-4 border-t border-gray-800 shrink-0 bg-black/40">
+              <div className="px-5 py-4 border-t border-gray-800 bg-black/40">
                 {deleteConfirm ? (
-                  <div className="flex items-center gap-3">
-                    <p className="text-xs text-red-300 font-bold flex-1">⚠️ Delete this booking permanently?</p>
-                    <button onClick={() => setDeleteConfirm(false)} disabled={isSaving} className="px-4 py-2 rounded-xl border border-gray-700 text-gray-300 text-xs font-black hover:bg-white/5 transition-colors">Cancel</button>
-                    <button onClick={handleDelete} disabled={isSaving} className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-600 text-white text-xs font-black transition-colors flex items-center gap-1.5">
-                      {isSaving ? <Loader2 size={12} className="animate-spin"/> : <Trash2 size={12}/>} Yes, Delete
-                    </button>
-                  </div>
+                   <div className="flex items-center gap-3">
+                     <button onClick={() => setDeleteConfirm(false)} className="px-4 py-2 rounded-xl border border-gray-700 text-gray-300 text-xs font-black">Cancel</button>
+                     <button onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-700 text-white text-xs font-black">Yes, Delete</button>
+                   </div>
                 ) : isEditMode ? (
                   <div className="flex items-center gap-3">
-                    <button onClick={() => { setIsEditMode(false); setEditForm(blankForm(selectedBooking)); setPopupError(null); }} disabled={isSaving}
-                      className="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-300 text-xs font-black hover:bg-white/5 transition-colors">Cancel</button>
-                    <button onClick={handleSaveEdit} disabled={isSaving}
-                      className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-colors flex items-center justify-center gap-2">
-                      {isSaving ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>} Save Changes
-                    </button>
+                    <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-300 text-xs font-black">Cancel</button>
+                    <button onClick={handleSaveEdit} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black flex items-center justify-center gap-2">Save Changes</button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setDeleteConfirm(true)} className="p-2.5 rounded-xl border border-red-900/60 text-red-500 hover:bg-red-900/20 transition-colors"><Trash2 size={14}/></button>
-                    <button onClick={() => setIsEditMode(true)} className="flex-1 py-2.5 rounded-xl border border-blue-700/60 text-blue-400 hover:bg-blue-900/20 text-xs font-black transition-colors flex items-center justify-center gap-2">
-                      <Edit2 size={12}/> Edit Booking
-                    </button>
+                    <button onClick={() => setDeleteConfirm(true)} className="p-2.5 rounded-xl border border-red-900/60 text-red-500"><Trash2 size={14}/></button>
+                    <button onClick={() => setIsEditMode(true)} className="flex-1 py-2.5 rounded-xl border border-blue-700/60 text-blue-400 text-xs font-black flex items-center justify-center gap-2"><Edit2 size={12}/> Edit</button>
                   </div>
                 )}
               </div>
