@@ -30,6 +30,29 @@ namespace Cinemac.Api.Controllers
             public PricingType PricingType { get; set; } = PricingType.PerHour;
         }
 
+         // ✅ GET: api/admin/AdminRooms
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Room>>> GetRooms()
+        {
+            var rooms = await _context.Rooms
+                .Include(r => r.Location)
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+            return Ok(rooms);
+        }
+
+        // ✅ GET: api/admin/AdminRooms/{id}
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Room>> GetRoom(Guid id)
+        {
+            var room = await _context.Rooms
+                .Include(r => r.Location)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (room == null) return NotFound();
+            return Ok(room);
+        }
+
         // POST: api/admin/rooms
         [HttpPost]
         public async Task<ActionResult<Room>> CreateRoom([FromBody] CreateRoomDto request)

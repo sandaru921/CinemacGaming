@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Navbar from "../../components/Navbar";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BookingCard from "../../components/booking/BookingCard";
+import * as signalR from "@microsoft/signalr"; // ✅ ADD
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
+const HUB_URL = process.env.NEXT_PUBLIC_HUB_URL || "http://localhost:5211/hubs/booking"; // ✅ ADD
 
 function getStatusColor(status: number): string {
   switch (status) {
@@ -37,6 +39,8 @@ export default function ProfilePage() {
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState<"upcoming" | "cancelled">("upcoming"); // ✅ tabs
+  const connectionRef = useRef<signalR.HubConnection | null>(null); // ✅ SignalR ref
 
   useEffect(() => {
     const token = localStorage.getItem("cinemac_token");
@@ -51,25 +55,63 @@ export default function ProfilePage() {
     }
   }, [router]);
 
+  // ✅ Extracted so SignalR can call it too
+  const fetchBookings = useCallback(async (userEmail: string) => {
+    if (!userEmail) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/bookings/mybookings?email=${encodeURIComponent(userEmail)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBookings(data);
+        console.log("🔄 [PROFILE] Bookings refreshed, count:", data.length);
+      }
+    } catch (err) {
+      console.error("Failed to fetch bookings", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // ✅ Fetch bookings when email is ready
   useEffect(() => {
     if (!email) return;
-    async function fetchBookings() {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`${API_BASE_URL}/bookings/mybookings?email=${encodeURIComponent(email)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setBookings(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch bookings", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchBookings();
-  }, [email]);
+    fetchBookings(email);
+  }, [email, fetchBookings]);
 
+  // ✅ SignalR — listen for booking updates from backend
+  useEffect(() => {
+    if (!email) return;
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(HUB_URL)
+      .withAutomaticReconnect([0, 2000, 5000, 10000])
+      .configureLogging(signalR.LogLevel.Warning)
+      .build();
+
+    // ✅ When any booking changes (admin update, new booking etc.) — refresh list
+    connection.on("ReceiveBookingUpdate", (bookingId: string, status: string) => {
+      console.log(`📡 [SIGNALR] ReceiveBookingUpdate — id: ${bookingId}, status: ${status}`);
+      fetchBookings(email); // ✅ re-fetch so latest status shows
+    });
+
+    // ✅ When admin deletes a booking
+    connection.on("BookingDeleted", (bookingId: string) => {
+      console.log(`🗑️ [SIGNALR] BookingDeleted — id: ${bookingId}`);
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    });
+
+    connection
+      .start()
+      .then(() => console.log("✅ [SIGNALR] Profile page connected"))
+      .catch((err) => console.error("❌ [SIGNALR] Profile connection failed:", err));
+
+    connectionRef.current = connection;
+
+    return () => {
+      connection.stop();
+    };
+  }, [email, fetchBookings]);
 
   const handleLogout = () => {
     localStorage.removeItem("cinemac_token");
@@ -87,8 +129,16 @@ export default function ProfilePage() {
         method: "PUT",
       });
       if (res.ok) {
-        setBookings((prev) => prev.filter((b) => b.id !== bookingId));
-        setSelectedBooking(null);
+        // ✅ FIXED — update status to Cancelled (2) instead of removing from list
+        setBookings((prev) =>
+          prev.map((b) => b.id === bookingId ? { ...b, status: 2 } : b)
+        );
+        // ✅ Also update the selected booking popup to show Cancelled status
+        setSelectedBooking((prev: any) =>
+          prev?.id === bookingId ? { ...prev, status: 2 } : prev
+        );
+        // ✅ Switch to cancelled tab so user can see it
+        setActiveTab("cancelled");
       } else {
         alert("Failed to cancel booking.");
       }
@@ -99,6 +149,17 @@ export default function ProfilePage() {
       setIsCancelling(false);
     }
   };
+
+  // ✅ Split bookings into upcoming and cancelled/past
+  const upcomingBookings = bookings.filter((b) => {
+    const isCancelled = b.status === 2;
+    const isPast = new Date(b.endTime) < new Date();
+    return !isCancelled && !isPast;
+  });
+
+  const cancelledBookings = bookings.filter((b) => {
+    return b.status === 2 || new Date(b.endTime) < new Date();
+  });
 
   return (
     <div className="min-h-screen bg-black text-white font-sans flex flex-col pb-20">
@@ -133,49 +194,74 @@ export default function ProfilePage() {
               </Link>
             </div>
 
+            {/* ✅ Tabs: Upcoming / Cancelled */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setActiveTab("upcoming")}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                  activeTab === "upcoming"
+                    ? "bg-cinemac-blue text-white"
+                    : "bg-gray-800 text-gray-400 hover:text-white"
+                }`}
+              >
+                Upcoming ({upcomingBookings.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("cancelled")}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                  activeTab === "cancelled"
+                    ? "bg-red-600 text-white"
+                    : "bg-gray-800 text-gray-400 hover:text-white"
+                }`}
+              >
+                Cancelled / Past ({cancelledBookings.length})
+              </button>
+            </div>
+
             {isLoading ? (
               <div className="flex justify-center items-center py-20">
                 <div className="w-10 h-10 border-4 border-cinemac-blue border-t-transparent rounded-full animate-spin"></div>
               </div>
-            ) : (() => {
-              const activeBookings = bookings.filter((b) => {
-                const isCancelled = b.status === 2;
-                const isPast = new Date(b.endTime) < new Date();
-                return !isCancelled && !isPast;
-              });
+            ) : (
+              (() => {
+                const displayBookings = activeTab === "upcoming" ? upcomingBookings : cancelledBookings;
 
-              if (activeBookings.length === 0) {
-                return (
-                  <div className="bg-gray-900 border border-gray-800 rounded-2xl p-10 text-center">
-                    <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                if (displayBookings.length === 0) {
+                  return (
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-10 text-center">
+                      <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-500">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">
+                        {activeTab === "upcoming" ? "No upcoming bookings" : "No cancelled bookings"}
+                      </h3>
+                      <p className="text-gray-400 mb-6">
+                        {activeTab === "upcoming" ? "You haven't made any reservations yet." : "You have no cancelled or past bookings."}
+                      </p>
+                      {activeTab === "upcoming" && (
+                        <Link href="/bookings" className="inline-block bg-cinemac-blue text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors">
+                          Book a Room Now
+                        </Link>
+                      )}
                     </div>
-                    <h3 className="text-xl font-bold mb-2">No bookings yet</h3>
-                    <p className="text-gray-400 mb-6">You haven&apos;t made any room reservations yet.</p>
-                    <Link
-                      href="/bookings"
-                      className="inline-block bg-cinemac-blue text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors"
-                    >
-                      Book a Room Now
-                    </Link>
+                  );
+                }
+
+                return (
+                  <div className="flex flex-col gap-3">
+                    {displayBookings.map((booking) => (
+                      <BookingCard
+                        key={booking.id}
+                        booking={booking}
+                        onClick={setSelectedBooking}
+                      />
+                    ))}
                   </div>
                 );
-              }
-
-              return (
-                <div className="flex flex-col gap-3">
-                  {activeBookings.map((booking) => (
-                    <BookingCard
-                      key={booking.id}
-                      booking={booking}
-                      onClick={setSelectedBooking}
-                    />
-                  ))}
-                </div>
-              );
-            })()}
+              })()
+            )}
           </div>
         </div>
       </main>
@@ -194,6 +280,7 @@ export default function ProfilePage() {
             </button>
 
             <div className="p-8">
+              {/* ✅ Status badge updates live now */}
               <div className={`inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-4 border ${getStatusColor(selectedBooking.status)}`}>
                 {getStatusText(selectedBooking.status)}
               </div>
@@ -237,6 +324,7 @@ export default function ProfilePage() {
 
               {/* Action Buttons */}
               <div className="flex gap-4">
+                {/* ✅ Only show cancel button if status is NOT already cancelled */}
                 {selectedBooking.status !== 2 && new Date(selectedBooking.startTime) > new Date() && (
                   <button
                     onClick={() => setShowCancelConfirm(true)}

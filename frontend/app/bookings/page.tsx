@@ -8,6 +8,7 @@ import TimeSlotPicker from "../../components/booking/TimeSlotPicker";
 import MediaSelector from "../../components/booking/MediaSelector";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLibrary, LibraryItem } from "../../contexts/LibraryContext";
+import * as signalR from "@microsoft/signalr";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
 
@@ -23,7 +24,7 @@ function BookingForm() {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [durationHours, setDurationHours] = useState<number>(0);
-
+const [refreshKey, setRefreshKey] = useState(0);
   // Form State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -78,6 +79,29 @@ function BookingForm() {
       }
     }
     fetchLocations();
+  }, []);
+
+  useEffect(() => {
+    // 1. Connection එක හදන්න
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_BASE_URL.replace("/api", "")}/hubs/bookings`) // Hub URL එක
+      .withAutomaticReconnect()
+      .build();
+
+    connection.start()
+      .then(() => {
+        console.log("Connected to SignalR ✅");
+        
+        // 2. පණිවිඩය ආවාම ක්‍රියාත්මක වන කොටස
+        connection.on("ReceiveBookingUpdate", (bookingId, status) => {
+          console.log("A booking was updated live!");
+          // ඇඩ්මින් යමක් වෙනස් කළොත් TimeSlotPicker එකට අලුත් දත්ත ගන්න සලස්වනවා
+          setRefreshKey(prev => prev + 1); 
+        });
+      })
+      .catch(err => console.error("SignalR Connection Error: ", err));
+
+    return () => { connection.stop(); };
   }, []);
 
   const handleLocationSelect = (loc: Location) => {
@@ -241,6 +265,7 @@ function BookingForm() {
         )}
         {selectedRoom && (
           <TimeSlotPicker 
+          key={refreshKey}
             roomId={selectedRoom.id} 
             onSlotSelected={handleSlotSelect} 
           />

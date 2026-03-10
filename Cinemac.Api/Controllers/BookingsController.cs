@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Cinemac.Api.Data;
 using Cinemac.Api.Models.Booking;
+using Microsoft.AspNetCore.SignalR;      // ✅ ADD THIS
+using Cinemac.Api.Hubs; 
 
 namespace Cinemac.Api.Controllers
 {
@@ -14,10 +16,12 @@ namespace Cinemac.Api.Controllers
     public class BookingsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IHubContext<BookingHub> _hubContext;
 
-        public BookingsController(AppDbContext context)
+        public BookingsController(AppDbContext context, IHubContext<BookingHub> hubContext)
         {
             _context = context;
+             _hubContext = hubContext; 
         }
 
         // GET: api/bookings/locations
@@ -109,6 +113,15 @@ namespace Cinemac.Api.Controllers
             _context.RoomBookings.Add(booking);
             await _context.SaveChangesAsync();
 
+             // ✅ ADD THIS — notify live grid after customer booking is saved
+            await _hubContext.Clients.All.SendAsync(
+                "ReceiveBookingUpdate",
+                booking.Id,
+                booking.Status.ToString()
+            );
+            Console.WriteLine($"[SignalR] New customer booking created: {booking.Id}");
+
+
             return CreatedAtAction(nameof(CreateBooking), new { id = booking.Id }, booking);
         }
 
@@ -172,6 +185,14 @@ namespace Cinemac.Api.Controllers
 
             booking.Status = BookingStatus.Cancelled;
             await _context.SaveChangesAsync();
+
+            // ✅ ADD THIS — notify live grid after booking is cancelled
+            await _hubContext.Clients.All.SendAsync(
+                "ReceiveBookingUpdate",
+                booking.Id,
+                booking.Status.ToString()
+            );
+            Console.WriteLine($"[SignalR] Booking cancelled: {booking.Id}");
 
             return Ok(new { message = "Booking cancelled successfully." });
         }

@@ -7,10 +7,9 @@ using Cinemac.Api.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Cinemac.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
 
 // Connection String එක කියවා ගැනීම
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -20,27 +19,42 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 1. Repository එක Register කිරීම
-// කවුරුහරි IMovieRepository එකක් ඉල්ලුවොත් MovieRepository එකක් ලබා දෙන්න
+// Repository එක Register කිරීම
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 
-// 2. Service එක Register කිරීම
+// Service එක Register කිරීම
 builder.Services.AddScoped<MovieService>();
 
-// 1. HttpClient එක Register කිරීම (API එකකට කතා කරන්න මේක අනිවාර්යයි)
+// HttpClient එක Register කිරීම
 builder.Services.AddHttpClient();
 
-// 2. TMDBService එක Register කිරීම
+// TMDBService එක Register කිරීම
 builder.Services.AddScoped<ITMDBService, TMDBService>();
 
-// 3. ImageService (Cloudinary) Register කිරීම
+// ImageService (Cloudinary) Register කිරීම
 builder.Services.AddScoped<IImageService, CloudinaryService>();
+
+// ✅ CORS — specific origins required when using AllowCredentials (SignalR needs this)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // ✅ required for SignalR WebSocket
+    });
+});
 
 // Configure JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? "super_secret_fallback_key_that_must_be_long_1234567890";
@@ -61,14 +75,29 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"] ?? "CinemacClients",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
     };
+
+    // ✅ Allow SignalR to read JWT from query string (needed for WebSocket transport)
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 var app = builder.Build();
 
-// Seed initial bookings data (Locations & 5 Rooms)
+// Seed initial data
 Cinemac.Api.Data.DbSeeder.SeedLocationsAndRooms(app);
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -78,11 +107,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Enable CORS for frontend
-app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+app.UseCors("AllowFrontend"); // ✅ CORS before Authentication and MapHub
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
+app.MapHub<BookingHub>("/hubs/booking"); // ✅ single hub registration, consistent URL
 
 app.Run();
