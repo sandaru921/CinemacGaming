@@ -48,7 +48,8 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://localhost:3000",
-                "https://localhost:3000"
+                "https://localhost:3000",
+                "https://cinemac-gaming.vercel.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -113,6 +114,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<BookingHub>("/hubs/booking"); // ✅ single hub registration, consistent URL
+app.MapHub<BookingHub>("/hubs/bookings"); // ✅ single hub registration, consistent URL
 
 app.Run();
