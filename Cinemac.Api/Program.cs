@@ -46,11 +46,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:3000",
-                "https://localhost:3000",
-                "https://cinemac-gaming.vercel.app"
-            )
+            .SetIsOriginAllowed(origin => true) // ✅ Allow all origins including Vercel preview URLs
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials(); // ✅ required for SignalR WebSocket

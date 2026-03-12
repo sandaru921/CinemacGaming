@@ -8,7 +8,7 @@ import {
 import * as signalR from "@microsoft/signalr";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
-const HUB_URL  = process.env.NEXT_PUBLIC_HUB_URL      || "http://localhost:5211/hubs/booking";
+const HUB_URL  = process.env.NEXT_PUBLIC_HUB_URL      || `${API_BASE.replace("/api", "")}/hubs/bookings`;
 
 const GRID_START_HOUR  = 9;
 const GRID_END_HOUR    = 23;

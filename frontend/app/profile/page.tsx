@@ -8,7 +8,7 @@ import BookingCard from "../../components/booking/BookingCard";
 import * as signalR from "@microsoft/signalr"; // ✅ ADD
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5211/api";
-const HUB_URL = process.env.NEXT_PUBLIC_HUB_URL || "http://localhost:5211/hubs/booking"; // ✅ ADD
+const HUB_URL = process.env.NEXT_PUBLIC_HUB_URL || `${API_BASE_URL.replace("/api", "")}/hubs/bookings`; // ✅ ADD
 
 function getStatusColor(status: number): string {
   switch (status) {
